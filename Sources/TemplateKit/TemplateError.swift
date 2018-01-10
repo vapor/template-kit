@@ -31,8 +31,8 @@ public struct TemplateError: Debuggable, Error, Traceable {
         return TemplateError(
             identifier: "serialize",
             reason: reason,
-            file: source.file ?? "template",
-            function: "serialize",
+            file: source.file,
+            function: source.range.description,
             line: UInt(source.line),
             column: UInt(source.column)
         )
@@ -42,8 +42,8 @@ public struct TemplateError: Debuggable, Error, Traceable {
         return TemplateError(
             identifier: "parse",
             reason: reason,
-            file: source.file ?? "template",
-            function: "parse",
+            file: source.file,
+            function: source.range.description,
             line: UInt(source.line),
             column: UInt(source.column)
         )

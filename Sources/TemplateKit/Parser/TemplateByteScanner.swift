@@ -4,6 +4,7 @@ import Foundation
 /// Used to facilitate parsing byte arrays
 public final class TemplateByteScanner {
     /// TemplateSource location information
+    public var file: String
     public var offset: Int
     public var line: Int
     public var column: Int
@@ -15,7 +16,8 @@ public final class TemplateByteScanner {
     public let data: Data
 
     /// Create a new byte scanner
-    public init(data: Data) {
+    public init(data: Data, file: String) {
+        self.file = file
         self.data = data
         self.buffer = data.withUnsafeBytes { (pointer: UnsafePointer<UInt8>) in
             return UnsafeBufferPointer(start: pointer, count: data.count)
