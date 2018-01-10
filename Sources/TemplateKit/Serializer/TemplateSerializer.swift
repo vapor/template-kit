@@ -131,7 +131,7 @@ public final class TemplateSerializer {
     // Renders `TemplateConditional` to future `TemplateData`.
     private func render(conditional: TemplateConditional, source: TemplateSource) throws -> Future<TemplateData> {
         return try self.render(syntax: conditional.condition).flatMap(to: TemplateData.self) { data in
-            if data.bool == true {
+            if !data.isNull && data.bool != false {
                 return try self.render(ast: conditional.body)
             } else if let next = conditional.next {
                 return try self.render(conditional: next, source: source)
