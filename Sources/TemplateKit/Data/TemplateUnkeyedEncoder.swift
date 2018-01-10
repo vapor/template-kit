@@ -14,6 +14,7 @@ internal final class TemplateDataUnkeyedEncoder: UnkeyedEncodingContainer {
         self.codingPath = codingPath
         self.partialData = partialData
         self.count = 0
+        partialData.set(to: .array([]), at: codingPath)
     }
 
     func encodeNil() throws {
