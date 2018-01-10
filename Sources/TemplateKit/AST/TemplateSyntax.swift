@@ -71,7 +71,6 @@ public indirect enum TemplateSyntaxType {
     case constant(TemplateConstant)
     case iterator(TemplateIterator)
     case expression(TemplateExpression)
-
 }
 
 extension TemplateSyntax: CustomStringConvertible {
