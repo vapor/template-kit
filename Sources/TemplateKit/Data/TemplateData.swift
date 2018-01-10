@@ -148,11 +148,15 @@ extension TemplateData {
             var data = Data()
             
             for i in arr {
-                guard let u = i.data else {
-                    return nil
-                }
+                switch i {
+                case .null: break
+                default:
+                    guard let u = i.data else {
+                        return nil
+                    }
 
-                data += u
+                    data += u
+                }
             }
 
             return data
