@@ -97,7 +97,7 @@ extension TemplateByteScanner {
     fileprivate func parseIdentifier() throws -> TemplateSyntax {
         let start = makeSourceStart()
 
-        while let next = peek(), next != .space, next.isAlphanumeric {
+        while let next = peek(), !next.isWhitespace, (next.isAlphanumeric || next == .period) {
             try requirePop()
         }
 
@@ -112,7 +112,7 @@ extension TemplateByteScanner {
     }
 
     fileprivate func skipWhitespace() throws {
-        while let next = peek(), next == .space {
+        while let next = peek(), next.isWhitespace {
             try requirePop()
         }
     }
