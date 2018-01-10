@@ -10,9 +10,6 @@ public protocol TagRenderer {
 public var defaultTags: [String: TagRenderer] {
     return [
         "": Print(),
-        // "ifElse": IfElse(),
-        // "loop": Loop(),
-        // "comment": Comment(),
         "contains": Contains(),
         "lowercase": Lowercase(),
         "uppercase": Uppercase(),
@@ -20,7 +17,6 @@ public var defaultTags: [String: TagRenderer] {
         "count": Count(),
         "set": Var(),
         "get": Raw(),
-        // "embed": Embed(),
         "date": DateFormat()
     ]
 }
