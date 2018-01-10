@@ -9,9 +9,7 @@ public final class MustacheParser: TemplateParser {
     public init() { }
 
     /// See TemplateParser.parse
-    public func parse(template: Data, file: String) throws -> [TemplateSyntax] {
-        let scanner = TemplateByteScanner(data: template, file: file)
-
+    public func parse(scanner: TemplateByteScanner) throws -> [TemplateSyntax] {
         var ast: [TemplateSyntax] = []
         while let syntax = try scanner.parseSyntax() {
             ast.append(syntax)

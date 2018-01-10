@@ -32,7 +32,8 @@ extension TemplateRenderer {
             if let cached = self.astCache?.storage[hash] {
                 ast = cached
             } else {
-                ast = try self.parser.parse(template: template, file: file)
+                let scanner = TemplateByteScanner(data: template, file: file)
+                ast = try self.parser.parse(scanner: scanner)
                 self.astCache?.storage[hash] = ast
             }
 

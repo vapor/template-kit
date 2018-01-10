@@ -33,10 +33,10 @@ public final class PlaintextRenderer: TemplateRenderer, TemplateParser {
     }
 
     /// See TemplateParser.parser
-    public func parse(template: Data, file: String) throws -> [TemplateSyntax] {
+    public func parse(scanner: TemplateByteScanner) throws -> [TemplateSyntax] {
         let plaintext = TemplateSyntax(
-            type: .raw(TemplateRaw(data: template)),
-            source: TemplateSource(file: file, line: 0, column: 0, range: 0..<template.count)
+            type: .raw(TemplateRaw(data: scanner.data)),
+            source: TemplateSource(file: scanner.file, line: 0, column: 0, range: 0..<scanner.data.count)
         )
         return [plaintext]
     }
