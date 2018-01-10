@@ -17,13 +17,13 @@ public struct TemplateSourceStart {
     public let file: String
     public let line: Int
     public let column: Int
-    public let rangeStart: Int
+    public let offset: Int
 }
 
 extension TemplateByteScanner {
     /// Creates a source range starting location.
     public func makeSourceStart() -> TemplateSourceStart {
-        return .init(file: file, line: line, column: column, rangeStart: offset)
+        return .init(file: file, line: line, column: column, offset: offset)
     }
 
     /// Closes a source range start location with the current location.
@@ -32,7 +32,7 @@ extension TemplateByteScanner {
             file: sourceStart.file,
             line: sourceStart.line,
             column: sourceStart.column,
-            range: sourceStart.rangeStart..<offset
+            range: sourceStart.offset..<offset
         )
     }
 }
