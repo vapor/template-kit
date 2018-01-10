@@ -25,14 +25,14 @@ extension TemplateRenderer {
     // ASTs only need to be parsed once
     /// Renders the supplied template bytes into a view
     /// using the supplied context.
-    public func render(template: Data, _ context: TemplateData) -> Future<View> {
+    public func render(template: Data, _ context: TemplateData, path: String = "template") -> Future<View> {
         return Future {
             let hash = template.hashValue
             let ast: [TemplateSyntax]
             if let cached = self.astCache?.storage[hash] {
                 ast = cached
             } else {
-                ast = try self.parser.parse(template: template)
+                ast = try self.parser.parse(template: template, path: path)
                 self.astCache?.storage[hash] = ast
             }
 
@@ -62,7 +62,7 @@ extension TemplateRenderer {
             return Future(error: error)
         }
 
-        return render(template: data, context)
+        return render(template: data, context, path: absolutePath)
     }
 }
 

@@ -1,4 +1,5 @@
 public struct TemplateSource {
+    public var file: String?
     public let line: Int
     public let column: Int
     public let range: Range<Int>

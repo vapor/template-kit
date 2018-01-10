@@ -65,7 +65,7 @@ extension TemplateByteScanner {
     public func requirePop() throws -> Byte {
         let start = makeSourceStart()
         guard let byte = pop() else {
-            fatalError("Unexpected EOF at \(makeSource(using: start))")
+            throw TemplateError.parse(reason: "Unexpected EOF", source: makeSource(using: start))
         }
         return byte
     }

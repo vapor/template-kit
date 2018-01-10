@@ -144,6 +144,18 @@ extension TemplateData {
             return lazy().data
         case .int(let i):
             return i.description.data(using: .utf8)
+        case .array(let arr):
+            var data = Data()
+            
+            for i in arr {
+                guard let u = i.data else {
+                    return nil
+                }
+
+                data += u
+            }
+
+            return data
         default:
             return nil
         }

@@ -1,7 +1,6 @@
 import Async
 import Dispatch
-import Leaf
-import Service
+import TemplateKit
 import XCTest
 
 class TemplateDataEncoderTests: XCTestCase {

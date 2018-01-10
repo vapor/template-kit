@@ -1,7 +1,6 @@
 import XCTest
-@testable import LeafTests
+@testable import TemplateKitTests
 
 XCTMain([
-    testCase(LeafTests.allTests),
     testCase(TemplateDataEncoderTests.allTests),
 ])

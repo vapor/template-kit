@@ -22,32 +22,39 @@ public final class TemplateSerializer {
 
     /// Serializes the AST into Bytes.
     public func serialize(ast: [TemplateSyntax]) -> Future<View> {
-        return Future {
-            return try ast.map { syntax -> Future<Data> in
-                return try self.render(syntax: syntax).map(to: Data.self) { context in
-                    if case .null = context {
-                        return Data()
-                    }
-
-                    guard let data = context.data else {
-                        throw TemplateSerializerError.unexpectedSyntax(syntax)
-                    }
-
-                    return data
-                }
-            }.map(to: View.self) { parts in
-                let data = Data(parts.joined())
-                return View(data: data)
+        return Future<TemplateData> { try self.render(ast: ast) }.map(to: Data.self) { context in
+            if case .null = context {
+                return Data()
             }
+
+            guard let data = context.data else {
+                throw TemplateError(
+                    identifier: "serialize",
+                    reason: "Unable to convert tag return type to Data: \(context)"
+                )
+            }
+
+            return data
+        }.map(to: View.self) { data in
+            return View(data: data)
         }
     }
 
     // MARK: Private
 
+    /// Renders a `[TemplateSyntax]` to future `View`.
+    private func render(ast: [TemplateSyntax]) throws -> Future<TemplateData> {
+        return try ast.map { syntax -> Future<TemplateData> in
+            return try self.render(syntax: syntax)
+        }.map(to: TemplateData.self) { parts in
+            return .array(parts)
+        }
+    }
+
     // Renders a `TemplateTag` to future `TemplateData`.
     private func render(tag: TemplateTag, source: TemplateSource) throws -> Future<TemplateData> {
         guard let tagRenderer = self.renderer.tags[tag.name] else {
-            throw TemplateSerializerError.unknownTag(name: tag.name, source: source)
+            throw TemplateError.serialize(reason: "No tag named `\(tag.name)` is registered.", source: source)
         }
 
         return try tag.parameters.map { parameter in
@@ -102,7 +109,11 @@ public final class TemplateSerializer {
                 case .divide: return .double(leftDouble / rightDouble)
                 case .greaterThan: return .bool(leftDouble > rightDouble)
                 case .lessThan: return .bool(leftDouble < rightDouble)
-                default: fatalError("Unsupported operator: \(infix) at \(source)")
+                default:
+                    throw TemplateError.serialize(
+                        reason: "Unsupported infix operator: \(infix) at \(source)",
+                        source: source
+                    )
                 }
             }
         }
@@ -121,7 +132,7 @@ public final class TemplateSerializer {
     private func render(conditional: TemplateConditional, source: TemplateSource) throws -> Future<TemplateData> {
         return try self.render(syntax: conditional.condition).flatMap(to: TemplateData.self) { data in
             if data.bool == true {
-                return self.serialize(ast: conditional.body).map(to: TemplateData.self) { .data($0.data) }
+                return try self.render(ast: conditional.body)
             } else if let next = conditional.next {
                 return try self.render(conditional: next, source: source)
             } else {
@@ -134,10 +145,11 @@ public final class TemplateSerializer {
     private func render(embed: TemplateEmbed, source: TemplateSource) throws -> Future<TemplateData> {
         return try render(syntax: embed.path).flatMap(to: TemplateData.self) { path in
             guard let path = path.string else {
-                throw TemplateSerializerError.unexpectedSyntax(embed.path)
+                throw TemplateError.serialize(reason: "Unable to convert embed path to string.", source: source)
             }
 
-            return self.renderer.render(path, self.context.data).map(to: TemplateData.self) { .data($0.data) }
+            return self.renderer.render(path, self.context.data)
+                .map(to: TemplateData.self) { .data($0.data) }
         }
     }
 
@@ -218,7 +230,11 @@ public final class TemplateSerializer {
             switch expr {
             case .infix(let op, let left, let right): return try render(infix: op, left: left, right: right, source: syntax.source)
             case .prefix(let op, let right): return try render(prefix: op, right: right, source: syntax.source)
-            case .postfix: fatalError("Unsupported expression: \(expr) at \(syntax.source)")
+            case .postfix:
+                throw TemplateError.serialize(
+                    reason: "Unsupported expression: \(expr) at \(syntax.source)",
+                    source: syntax.source
+                )
             }
         case .identifier(let id): return context.fetch(at: id.path)
         case .tag(let tag): return try render(tag: tag, source: syntax.source)

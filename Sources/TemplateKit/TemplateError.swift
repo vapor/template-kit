@@ -10,7 +10,7 @@ public struct TemplateError: Debuggable, Error, Traceable {
     public var column: UInt
     public var stackTrace: [String]
 
-    internal init(
+    public init(
         identifier: String,
         reason: String,
         file: String = #file,
@@ -27,12 +27,23 @@ public struct TemplateError: Debuggable, Error, Traceable {
         self.stackTrace = TemplateError.makeStackTrace()
     }
 
-    static func serialize(reason: String, source: TemplateSource) -> TemplateError {
+    internal static func serialize(reason: String, source: TemplateSource) -> TemplateError {
         return TemplateError(
             identifier: "serialize",
             reason: reason,
-            file: "template",
+            file: source.file ?? "template",
             function: "serialize",
+            line: UInt(source.line),
+            column: UInt(source.column)
+        )
+    }
+
+    public static func parse(reason: String, source: TemplateSource) -> TemplateError {
+        return TemplateError(
+            identifier: "parse",
+            reason: reason,
+            file: source.file ?? "template",
+            function: "parse",
             line: UInt(source.line),
             column: UInt(source.column)
         )
