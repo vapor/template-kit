@@ -64,32 +64,100 @@ extension TemplateByteScanner {
             throw TemplateError.parse(reason: "Invalid tag open", source: makeSource(using: start))
         }
 
-        let parameters: [TemplateSyntax]
-        let body: [TemplateSyntax]?
+        let type: TemplateSyntaxType
 
         guard let key = peek() else {
             throw TemplateError.parse(reason: "Unexpected EOF", source: makeSource(using: start))
         }
 
         switch key {
-        case .leftCurlyBracket: fatalError("raw tag")
-        case .numberSign: fatalError("section")
+        case .leftCurlyBracket:
+            // pop extra {
+            try requirePop()
+
+            // raw tag
+            try skipWhitespace()
+            let id = try parseIdentifier()
+            try skipWhitespace()
+
+            // pop tag close
+            let close = try [requirePop(), requirePop(), requirePop()] // }}}
+            guard close == [.rightCurlyBracket, .rightCurlyBracket, .rightCurlyBracket] else {
+                throw TemplateError.parse(reason: "Invalid tag close", source: makeSource(using: start))
+            }
+
+            let tag = TemplateTag(name: "get", parameters: [id], body: nil)
+            type = .tag(tag)
+        case .numberSign:
+            // pop extra #
+            try requirePop()
+
+            // section tag
+            try skipWhitespace()
+            let id = try parseIdentifier()
+            try skipWhitespace()
+
+            // pop tag close
+            let close = try [requirePop(), requirePop()] // }}
+            guard close == [.rightCurlyBracket, .rightCurlyBracket] else {
+                throw TemplateError.parse(reason: "Invalid tag close", source: makeSource(using: start))
+            }
+
+            // parse section body
+            var body: [TemplateSyntax] = []
+            parse: while let syntax = try parseSyntax() {
+                switch syntax.type {
+                case .tag(let tag):
+                    if
+                        /// if this is the end tag for this section
+                        case .identifier(let a) = tag.parameters[0].type,
+                        case .identifier(let b) = id.type,
+                        tag.name == "_end",
+                        a.path.map({ $0.stringValue }) == b.path.map({ $0.stringValue })
+                    {
+                        break parse
+                    }
+                default: body.append(syntax)
+                }
+            }
+
+            let cond = TemplateConditional(condition: id, body: body, next: nil)
+            type = .conditional(cond)
+        case .forwardSlash:
+            // pop extra /
+            try requirePop()
+
+            // section tag
+            try skipWhitespace()
+            let id = try parseIdentifier()
+            try skipWhitespace()
+
+            // pop tag close
+            let close = try [requirePop(), requirePop()] // }}
+            guard close == [.rightCurlyBracket, .rightCurlyBracket] else {
+                throw TemplateError.parse(reason: "Invalid tag close", source: makeSource(using: start))
+            }
+
+            let tag = TemplateTag(name: "_end", parameters: [id], body: nil)
+            type = .tag(tag)
         default:
             // normal tag
             try skipWhitespace()
             let id = try parseIdentifier()
             try skipWhitespace()
-            parameters = [id]
-            body = nil
+
+            // pop tag close
+            let close = try [requirePop(), requirePop()] // }}
+            guard close == [.rightCurlyBracket, .rightCurlyBracket] else {
+                throw TemplateError.parse(reason: "Invalid tag close", source: makeSource(using: start))
+            }
+
+            let tag = TemplateTag(name: "", parameters: [id], body: nil)
+            type = .tag(tag)
         }
 
-        let close = try [requirePop(), requirePop()] // }}
-        guard close == [.rightCurlyBracket, .rightCurlyBracket] else {
-            throw TemplateError.parse(reason: "Invalid tag close", source: makeSource(using: start))
-        }
 
-        let tag = TemplateTag(name: "", parameters: parameters, body: body)
-        return TemplateSyntax(type: .tag(tag), source: makeSource(using: start))
+        return TemplateSyntax(type: type, source: makeSource(using: start))
     }
 
     /// Parses identifiers, like `foo.bar.baz`.

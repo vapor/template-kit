@@ -23,9 +23,25 @@ class MustacheTests: XCTestCase {
         try XCTAssertEqual(renderer.testRender(template, .dictionary(["name": .string("Tanner")])), expected)
     }
 
+    func testUnescaped() {
+        let template = "Hello, {{{html}}}!"
+        let expected = "Hello, Tan&ner!"
+        try XCTAssertEqual(renderer.testRender(template, .dictionary(["html": .string("Tan&ner")])), expected)
+    }
+
+    func testSection() {
+        let template = "{{#cond}}It's true{{/cond}}!"
+        let isFalse = "!"
+        let isTrue = "It's true!"
+        try XCTAssertEqual(renderer.testRender(template, .dictionary(["cond": .bool(false)])), isFalse)
+        try XCTAssertEqual(renderer.testRender(template, .dictionary(["cond": .bool(true)])), isTrue)
+    }
+
     static var allTests = [
         ("testRaw", testRaw),
         ("testBasic", testBasic),
+        ("testUnescaped", testUnescaped),
+        ("testSection", testSection),
     ]
 }
 
