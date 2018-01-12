@@ -1,5 +1,6 @@
 import Async
 import Foundation
+import Service
 
 /// Renders templates as plaintext.
 public final class PlaintextRenderer: TemplateRenderer, TemplateParser {
@@ -20,16 +21,16 @@ public final class PlaintextRenderer: TemplateRenderer, TemplateParser {
     /// See TemplateRenderer.relativeDirectory
     public var relativeDirectory: String
 
-    /// See TemplateRenderer.eventLoop
-    public var eventLoop: EventLoop
+    /// See TemplateRenderer.container
+    public var container: Container
 
     /// Create a new PlaintextRenderer
-    public init(viewsDir: String, on worker: Worker) {
+    public init(viewsDir: String, on container: Container) {
         self.tags = [:]
         self.astCache = nil
         self.templateFileEnding = ""
         self.relativeDirectory = viewsDir
-        self.eventLoop = worker.eventLoop
+        self.container = container
     }
 
     /// See TemplateParser.parser

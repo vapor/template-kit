@@ -1,5 +1,6 @@
 import Async
 import Dispatch
+import Service
 
 /// Represents a tag that has been parsed.
 public struct TagContext {
@@ -16,7 +17,7 @@ public struct TagContext {
     public let source: TemplateSource
 
     /// Queue to complete futures on.
-    public let eventLoop: Worker
+    public let container: Container
 
     /// The template data context
     public let context: TemplateContext
@@ -32,7 +33,7 @@ public struct TagContext {
         source: TemplateSource,
         context: TemplateContext,
         serializer: TemplateSerializer,
-        on worker: Worker
+        using container: Container
     ) {
         self.name = name
         self.parameters = parameters
@@ -40,7 +41,7 @@ public struct TagContext {
         self.source = source
         self.context = context
         self.serializer = serializer
-        self.eventLoop = worker.eventLoop
+        self.container = container
     }
 }
 

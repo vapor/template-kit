@@ -2,6 +2,7 @@ import Async
 import Dispatch
 import Mustache
 import TemplateKit
+import Service
 import XCTest
 
 class MustacheTests: XCTestCase {
@@ -9,7 +10,8 @@ class MustacheTests: XCTestCase {
 
     override func setUp() {
         let worker = try! DefaultEventLoop(label: "codes.vapor.test.mustache")
-        renderer = MustacheRenderer(on: worker)
+        let container = BasicContainer(config: .init(), environment: .development, services: .init(), on: worker)
+        renderer = MustacheRenderer(using: container)
     }
 
     func testRaw() {
