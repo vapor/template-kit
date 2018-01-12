@@ -13,11 +13,14 @@ let package = Package(
 
         // Core extensions, type-aliases, and functions that facilitate common tasks.
         .package(url: "https://github.com/vapor/core.git", .branch("beta")),
+
+        // Service container and configuration system.
+        .package(url: "https://github.com/vapor/service.git", .branch("beta")),
     ],
     targets: [
         .target(name: "Mustache", dependencies: ["TemplateKit"]),
         .testTarget(name: "MustacheTests", dependencies: ["Mustache"]),
-        .target(name: "TemplateKit", dependencies: ["Async", "Bits", "CodableKit"]),
+        .target(name: "TemplateKit", dependencies: ["Async", "Bits", "CodableKit", "Service"]),
         .testTarget(name: "TemplateKitTests", dependencies: ["TemplateKit"]),
     ]
 )

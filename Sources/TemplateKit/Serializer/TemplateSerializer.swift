@@ -1,6 +1,7 @@
 import Async
 import Dispatch
 import Foundation
+import Service
 
 /// Serializes parsed AST, using context, into view bytes.
 public final class TemplateSerializer {
@@ -10,14 +11,14 @@ public final class TemplateSerializer {
     /// The current context.
     public let context: TemplateContext
 
-    /// The serializer's event loop.
-    public let eventLoop: EventLoop
+    /// The serializer's container.
+    public let container: Container
 
     /// Creates a new TemplateSerializer
-    public init(renderer: TemplateRenderer, context: TemplateContext, on worker: Worker) {
+    public init(renderer: TemplateRenderer, context: TemplateContext, using container: Container) {
         self.renderer = renderer
         self.context = context
-        self.eventLoop = worker.eventLoop
+        self.container = container
     }
 
     /// Serializes the AST into Bytes.
@@ -67,7 +68,7 @@ public final class TemplateSerializer {
                 source: source,
                 context: self.context,
                 serializer: self,
-                on: self.eventLoop
+                using: self.container
             )
 
             return try tagRenderer.render(tag: tagContext)
@@ -168,7 +169,7 @@ public final class TemplateSerializer {
                 let serializer = TemplateSerializer(
                     renderer: self.renderer,
                     context: .init(data: .dictionary(copy)),
-                    on: self.eventLoop
+                    using: self.container
                 )
                 return serializer.serialize(ast: iterator.body)
             }

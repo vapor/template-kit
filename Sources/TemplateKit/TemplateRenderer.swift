@@ -1,10 +1,14 @@
 import Async
 import Foundation
+import Service
 
 /// Renders templates to views.
-public protocol TemplateRenderer: class, Worker {
+public protocol TemplateRenderer: class {
     /// The available tags.
     var tags: [String: TagRenderer] { get }
+
+    /// The renderer's container.
+    var container: Container { get }
 
     /// Parses the template data into an AST.
     /// See `TemplateParser`.
@@ -40,7 +44,7 @@ extension TemplateRenderer {
             let serializer = TemplateSerializer(
                 renderer: self,
                 context: .init(data: context),
-                on: self
+                using: self.container
             )
             return serializer.serialize(ast: ast)
         }

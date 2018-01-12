@@ -1,5 +1,6 @@
 import Async
 import TemplateKit
+import Service
 
 /// Renders mustache templates using the `MustacheParser`.
 public final class MustacheRenderer: TemplateRenderer {
@@ -18,16 +19,16 @@ public final class MustacheRenderer: TemplateRenderer {
     /// See TemplateRenderer.relativeDirectory
     public var relativeDirectory: String
 
-    /// See TemplateRenderer.eventLoop
-    public var eventLoop: EventLoop
+    /// See TemplateRenderer.container
+    public var container: Container
 
     /// Create a new `MustacheRenderer`
-    public init(tags: [String: TagRenderer] = defaultTags, on worker: Worker) {
+    public init(tags: [String: TagRenderer] = defaultTags, using container: Container) {
         self.tags = tags
         self.parser = MustacheParser()
         self.astCache = .init()
         self.templateFileEnding = ".mustache"
         self.relativeDirectory = "/"
-        self.eventLoop = worker.eventLoop
+        self.container = container
     }
 }
