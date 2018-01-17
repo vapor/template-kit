@@ -178,6 +178,18 @@ extension TemplateData {
 
 extension TemplateData: Equatable {
     public static func ==(lhs: TemplateData, rhs: TemplateData) -> Bool {
+        /// Fuzzy compare
+        if lhs.string != nil && lhs.string == rhs.string {
+            return true
+        } else if lhs.int != nil && lhs.int == rhs.int {
+            return true
+        } else if lhs.double != nil && lhs.double == rhs.double {
+            return true
+        } else if lhs.bool != nil && lhs.bool == rhs.bool {
+            return true
+        }
+
+        /// Strict compare
         switch (lhs, rhs) {
         case (.array(let a), .array(let b)): return a == b
         case (.dictionary(let a), .dictionary(let b)): return a == b
