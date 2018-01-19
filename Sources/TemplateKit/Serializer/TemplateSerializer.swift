@@ -23,7 +23,7 @@ public final class TemplateSerializer {
 
     /// Serializes the AST into Bytes.
     public func serialize(ast: [TemplateSyntax]) -> Future<View> {
-        return Future<TemplateData> { try self.render(ast: ast) }.map(to: Data.self) { context in
+        return Future<TemplateData>.flatMap { try self.render(ast: ast) }.map(to: Data.self) { context in
             if case .null = context {
                 return Data()
             }

@@ -30,7 +30,7 @@ extension TemplateRenderer {
     /// Renders the supplied template bytes into a view
     /// using the supplied context.
     public func render(template: Data, _ context: TemplateData, file: String = "template") -> Future<View> {
-        return Future {
+        return Future.flatMap {
             let hash = template.hashValue
             let ast: [TemplateSyntax]
             if let cached = self.astCache?.storage[hash] {
@@ -83,7 +83,7 @@ extension TemplateRenderer {
 extension TemplateRenderer {
     /// Loads the template from the supplied path.
     public func render(template: Data, _ context: Encodable) -> Future<View> {
-        return Future {
+        return Future.flatMap {
             let context = try TemplateDataEncoder().encode(context)
             return self.render(template: template, context)
         }
@@ -91,7 +91,7 @@ extension TemplateRenderer {
 
     /// Loads the template from the supplied path.
     public func render(_ path: String, _ context: Encodable) -> Future<View> {
-        return Future {
+        return Future.flatMap {
             let context = try TemplateDataEncoder().encode(context)
             return self.render(path, context)
         }
