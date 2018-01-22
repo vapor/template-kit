@@ -192,18 +192,15 @@ public final class TemplateSerializer {
                 var views: [Future<View>] = []
                 var index = 0
 
-                let drain = stream.drain { item, upstream in
+                stream.drain { item in
                     let view = renderIteration(item: item, index: index)
                     index += 1
                     views.append(view)
-                    upstream.request()
                 }.catch { error in
                     promise.fail(error)
                 }.finally {
                     merge(views: views).chain(to: promise)
                 }
-
-                drain.upstream!.request()
                 return promise.future
             default:
                 guard let data = data.array else {
