@@ -66,7 +66,7 @@ extension TemplateByteScanner {
     @discardableResult
     public func requirePop() throws -> Byte {
         guard let byte = pop() else {
-            throw TemplateError(identifier: "parse", reason: "Unexpected EOF")
+            throw TemplateError(identifier: "parse", reason: "Unexpected EOF", source: .capture())
         }
         return byte
     }

@@ -31,7 +31,8 @@ public final class TemplateSerializer {
             guard let data = context.data else {
                 throw TemplateError(
                     identifier: "serialize",
-                    reason: "Unable to convert tag return type to Data: \(context)"
+                    reason: "Unable to convert tag return type to Data: \(context)",
+                    source: .capture()
                 )
             }
 

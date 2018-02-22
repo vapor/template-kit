@@ -1,29 +1,20 @@
 import Debugging
 
 /// An error converting types.
-public struct TemplateError: Debuggable, Error, Traceable {
+public struct TemplateError: Debuggable {
     public let identifier: String
     public let reason: String
-    public var file: String
-    public var function: String
-    public var line: UInt
-    public var column: UInt
+    public var sourceLocation: SourceLocation
     public var stackTrace: [String]
 
     public init(
         identifier: String,
         reason: String,
-        file: String = #file,
-        function: String = #function,
-        line: UInt = #line,
-        column: UInt = #column
+        source: SourceLocation
     ) {
         self.identifier = identifier
         self.reason = reason
-        self.file = file
-        self.function = function
-        self.line = line
-        self.column = column
+        self.sourceLocation = source
         self.stackTrace = TemplateError.makeStackTrace()
     }
 
@@ -31,10 +22,7 @@ public struct TemplateError: Debuggable, Error, Traceable {
         return TemplateError(
             identifier: "serialize",
             reason: reason,
-            file: source.file,
-            function: source.range.description,
-            line: UInt(source.line),
-            column: UInt(source.column)
+            source: source.makeSourceLocation()
         )
     }
 
@@ -42,10 +30,19 @@ public struct TemplateError: Debuggable, Error, Traceable {
         return TemplateError(
             identifier: "parse",
             reason: reason,
-            file: source.file,
-            function: source.range.description,
-            line: UInt(source.line),
-            column: UInt(source.column)
+            source: source.makeSourceLocation()
+        )
+    }
+}
+
+extension TemplateSource {
+    public func makeSourceLocation() -> SourceLocation {
+        return SourceLocation(
+            file: file,
+            function: range.description,
+            line: UInt(line),
+            column: UInt(column),
+            range: Range<UInt>(uncheckedBounds: (lower: UInt(range.lowerBound), upper: UInt(range.upperBound)))
         )
     }
 }

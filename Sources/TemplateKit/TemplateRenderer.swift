@@ -62,7 +62,8 @@ extension TemplateRenderer {
         guard let data = FileManager.default.contents(atPath: absolutePath) else {
             let error = TemplateError(
                 identifier: "fileNotFound",
-                reason: "No file was found at path: \(absolutePath)"
+                reason: "No file was found at path: \(absolutePath)",
+                source: .capture()
             )
             return Future(error: error)
         }
