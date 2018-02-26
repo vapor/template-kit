@@ -4,7 +4,7 @@ import Debugging
 public struct TemplateError: Debuggable {
     public let identifier: String
     public let reason: String
-    public var sourceLocation: SourceLocation
+    public var sourceLocation: SourceLocation?
     public var stackTrace: [String]
 
     public init(
@@ -18,31 +18,25 @@ public struct TemplateError: Debuggable {
         self.stackTrace = TemplateError.makeStackTrace()
     }
 
-    internal static func serialize(reason: String, source: TemplateSource) -> TemplateError {
+    internal static func serialize(reason: String, template: TemplateSource, source: SourceLocation) -> TemplateError {
         return TemplateError(
             identifier: "serialize",
-            reason: reason,
-            source: source.makeSourceLocation()
+            reason:  reason + " in " + template.makeReadable(),
+            source: source
         )
     }
 
-    public static func parse(reason: String, source: TemplateSource) -> TemplateError {
+    public static func parse(reason: String, template: TemplateSource, source: SourceLocation) -> TemplateError {
         return TemplateError(
             identifier: "parse",
-            reason: reason,
-            source: source.makeSourceLocation()
+            reason: reason + " in " + template.makeReadable(),
+            source: source
         )
     }
 }
 
 extension TemplateSource {
-    public func makeSourceLocation() -> SourceLocation {
-        return SourceLocation(
-            file: file,
-            function: range.description,
-            line: UInt(line),
-            column: UInt(column),
-            range: Range<UInt>(uncheckedBounds: (lower: UInt(range.lowerBound), upper: UInt(range.upperBound)))
-        )
+    fileprivate func makeReadable() -> String {
+        return "\(file) line: \(line) column: \(column) range: \(range)"
     }
 }
