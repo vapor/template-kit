@@ -59,13 +59,13 @@ extension TemplateByteScanner {
 
         let open = try [requirePop(), requirePop()] // {{
         guard open == [.leftCurlyBracket, .leftCurlyBracket] else {
-            throw TemplateError.parse(reason: "Invalid tag open", source: makeSource(using: start))
+            throw TemplateError.parse(reason: "Invalid tag open", template: makeSource(using: start), source: .capture())
         }
 
         let type: TemplateSyntaxType
 
         guard let key = peek() else {
-            throw TemplateError.parse(reason: "Unexpected EOF", source: makeSource(using: start))
+            throw TemplateError.parse(reason: "Unexpected EOF", template: makeSource(using: start), source: .capture())
         }
 
         switch key {
@@ -81,7 +81,7 @@ extension TemplateByteScanner {
             // pop tag close
             let close = try [requirePop(), requirePop(), requirePop()] // }}}
             guard close == [.rightCurlyBracket, .rightCurlyBracket, .rightCurlyBracket] else {
-                throw TemplateError.parse(reason: "Invalid tag close", source: makeSource(using: start))
+                throw TemplateError.parse(reason: "Invalid tag close", template: makeSource(using: start), source: .capture())
             }
 
             let tag = TemplateTag(name: "get", parameters: [id], body: nil)
@@ -98,7 +98,7 @@ extension TemplateByteScanner {
             // pop tag close
             let close = try [requirePop(), requirePop()] // }}
             guard close == [.rightCurlyBracket, .rightCurlyBracket] else {
-                throw TemplateError.parse(reason: "Invalid tag close", source: makeSource(using: start))
+                throw TemplateError.parse(reason: "Invalid tag close", template: makeSource(using: start), source: .capture())
             }
 
             // parse section body
@@ -133,7 +133,7 @@ extension TemplateByteScanner {
             // pop tag close
             let close = try [requirePop(), requirePop()] // }}
             guard close == [.rightCurlyBracket, .rightCurlyBracket] else {
-                throw TemplateError.parse(reason: "Invalid tag close", source: makeSource(using: start))
+                throw TemplateError.parse(reason: "Invalid tag close", template: makeSource(using: start), source: .capture())
             }
 
             let tag = TemplateTag(name: "_end", parameters: [id], body: nil)
@@ -147,7 +147,7 @@ extension TemplateByteScanner {
             // pop tag close
             let close = try [requirePop(), requirePop()] // }}
             guard close == [.rightCurlyBracket, .rightCurlyBracket] else {
-                throw TemplateError.parse(reason: "Invalid tag close", source: makeSource(using: start))
+                throw TemplateError.parse(reason: "Invalid tag close", template: makeSource(using: start), source: .capture())
             }
 
             let tag = TemplateTag(name: "", parameters: [id], body: nil)

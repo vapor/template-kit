@@ -56,7 +56,7 @@ public final class TemplateSerializer {
     // Renders a `TemplateTag` to future `TemplateData`.
     private func render(tag: TemplateTag, source: TemplateSource) throws -> Future<TemplateData> {
         guard let tagRenderer = self.renderer.tags[tag.name] else {
-            throw TemplateError.serialize(reason: "No tag named `\(tag.name)` is registered.", source: source)
+            throw TemplateError.serialize(reason: "No tag named `\(tag.name)` is registered.", template: source, source: .capture())
         }
 
         return try tag.parameters.map { parameter in
@@ -113,8 +113,7 @@ public final class TemplateSerializer {
                 case .lessThan: return .bool(leftDouble < rightDouble)
                 default:
                     throw TemplateError.serialize(
-                        reason: "Unsupported infix operator: \(infix) at \(source)",
-                        source: source
+                        reason: "Unsupported infix operator: \(infix) at \(source)", template: source, source: .capture()
                     )
                 }
             }
@@ -147,7 +146,7 @@ public final class TemplateSerializer {
     private func render(embed: TemplateEmbed, source: TemplateSource) throws -> Future<TemplateData> {
         return try render(syntax: embed.path).flatMap(to: TemplateData.self) { path in
             guard let path = path.string else {
-                throw TemplateError.serialize(reason: "Unable to convert embed path to string.", source: source)
+                throw TemplateError.serialize(reason: "Unable to convert embed path to string.", template: source, source: .capture())
             }
 
             return self.renderer.render(path, self.context.data)
@@ -160,7 +159,7 @@ public final class TemplateSerializer {
     private func render(iterator: TemplateIterator, source: TemplateSource) throws -> Future<TemplateData> {
         return try flatMap(to: TemplateData.self, render(syntax: iterator.key), render(syntax: iterator.data)) { key, data in
             guard let key = key.string else {
-                throw TemplateError.serialize(reason: "Could not convert iterator key to string.", source: source)
+                throw TemplateError.serialize(reason: "Could not convert iterator key to string.", template: source, source: .capture())
             }
 
             func renderIteration(item: TemplateData, index: Int) -> Future<View> {
@@ -205,7 +204,7 @@ public final class TemplateSerializer {
                 return promise.future
             default:
                 guard let data = data.array else {
-                    throw TemplateError.serialize(reason: "Could not convert iterator data to array.", source: source)
+                    throw TemplateError.serialize(reason: "Could not convert iterator data to array.", template: source, source: .capture())
                 }
 
                 let views = data.enumerated().map { (i, item) -> Future<View> in
@@ -227,8 +226,7 @@ public final class TemplateSerializer {
             case .prefix(let op, let right): return try render(prefix: op, right: right, source: syntax.source)
             case .postfix:
                 throw TemplateError.serialize(
-                    reason: "Unsupported expression: \(expr) at \(syntax.source)",
-                    source: syntax.source
+                    reason: "Unsupported expression: \(expr) at \(syntax.source)", template: syntax.source, source: .capture()
                 )
             }
         case .identifier(let id): return context.fetch(at: id.path)
