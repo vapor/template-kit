@@ -7,7 +7,7 @@ public final class Print: TagRenderer {
         try parsed.requireNoBody()
         try parsed.requireParameterCount(1)
         let string = parsed.parameters[0].string ?? ""
-        return Future(.string(string.htmlEscaped()))
+        return Future.map(on: parsed.container) { .string(string.htmlEscaped()) }
     }
 }
 
