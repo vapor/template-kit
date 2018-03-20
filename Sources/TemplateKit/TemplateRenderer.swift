@@ -30,7 +30,7 @@ extension TemplateRenderer {
     /// Renders the supplied template bytes into a view
     /// using the supplied context.
     public func render(template: Data, _ context: TemplateData, file: String = "template") -> Future<View> {
-        return Future.flatMap {
+        return Future.flatMap(on: container) {
             let hash = template.hashValue
             let ast: [TemplateSyntax]
             if let cached = self.astCache?.storage[hash] {
@@ -43,7 +43,7 @@ extension TemplateRenderer {
 
             let serializer = TemplateSerializer(
                 renderer: self,
-                context: .init(data: context),
+                context: .init(data: context, on: self.container),
                 using: self.container
             )
             return serializer.serialize(ast: ast)
@@ -65,7 +65,7 @@ extension TemplateRenderer {
                 reason: "No file was found at path: \(absolutePath)",
                 source: .capture()
             )
-            return Future(error: error)
+            return Future.map(on: container) { throw error }
         }
 
         return render(template: data, context, file: absolutePath)
@@ -84,7 +84,7 @@ extension TemplateRenderer {
 extension TemplateRenderer {
     /// Loads the template from the supplied path.
     public func render(template: Data, _ context: Encodable) -> Future<View> {
-        return Future.flatMap {
+        return Future.flatMap(on: container) {
             let context = try TemplateDataEncoder().encode(context)
             return self.render(template: template, context)
         }
@@ -92,7 +92,7 @@ extension TemplateRenderer {
 
     /// Loads the template from the supplied path.
     public func render(_ path: String, _ context: Encodable) -> Future<View> {
-        return Future.flatMap {
+        return Future.flatMap(on: container) {
             let context = try TemplateDataEncoder().encode(context)
             return self.render(path, context)
         }

@@ -5,16 +5,20 @@ public final class TemplateContext {
     /// The wrapped data
     public var data: TemplateData
 
+    /// The event loop.
+    public let eventLoop: EventLoop
+
     /// Create a new LeafContext
-    public init(data: TemplateData) {
+    public init(data: TemplateData, on worker: Worker) {
         self.data = data
+        self.eventLoop = worker.eventLoop
     }
 }
 
 extension TemplateContext {
     // Fetches data from that context at the supplied coding key.
     public func fetch(at path: [CodingKey]) -> Future<TemplateData> {
-        var promise = Promise(TemplateData.self)
+        var promise = eventLoop.newPromise(TemplateData.self)
 
         var current = data
         var iterator = path.makeIterator()
@@ -28,10 +32,10 @@ extension TemplateContext {
                     if let next = iterator.next() {
                         handle(next)
                     } else {
-                        promise.complete(current)
+                        promise.succeed(result: current)
                     }
                 } else {
-                    promise.complete(.null)
+                    promise.succeed(result: .null)
                 }
             case .dictionary(let dict):
                 if let value = dict[ path.stringValue] {
@@ -39,29 +43,29 @@ extension TemplateContext {
                     if let next = iterator.next() {
                         handle(next)
                     } else {
-                        promise.complete(current)
+                        promise.succeed(result: current)
                     }
                 } else {
-                    promise.complete(.null)
+                    promise.succeed(result: .null)
                 }
             case .future(let fut):
                 fut.do { value in
                     current = value
                     handle(path)
                     }.catch { error in
-                        promise.fail(error)
+                        promise.fail(error: error)
                 }
             default:
-                promise.complete(.null)
+                promise.succeed(result: .null)
             }
         }
 
         if let first = iterator.next() {
             handle(first)
         } else {
-            promise.complete(current)
+            promise.succeed(result: current)
         }
 
-        return promise.future
+        return promise.futureResult
     }
 }

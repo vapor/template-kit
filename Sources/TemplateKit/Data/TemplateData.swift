@@ -13,19 +13,10 @@ public enum TemplateData {
     case dictionary([String: TemplateData])
     case array([TemplateData])
     case future(Future<TemplateData>)
-    case stream(AnyOutputStream<TemplateData>)
+    // case stream(AnyOutputStream<TemplateData>)
     public typealias Lazy = () -> (TemplateData)
     case lazy(Lazy)
     case null
-
-    public static func convert<O>(stream: O) -> TemplateData
-        where O: Async.OutputStream, O.Output: Encodable
-    {
-        let dataStream = stream.map(to: TemplateData.self) { encodable in
-            return try TemplateDataEncoder().encode(encodable)
-        }
-        return .stream(AnyOutputStream(dataStream))
-    }
 }
 
 // MARK: Polymorphic

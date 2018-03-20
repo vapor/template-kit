@@ -25,10 +25,10 @@ public final class Var: TagRenderer {
             }
             dict[key] = tag.parameters[1]
             tag.context.data = .dictionary(dict)
-            return Future(.null)
+            return Future.map(on: tag.container) { .null }
         default:
             try tag.requireParameterCount(2)
-            return Future(.null)
+            return Future.map(on: tag.container) { .null }
         }
     }
 }

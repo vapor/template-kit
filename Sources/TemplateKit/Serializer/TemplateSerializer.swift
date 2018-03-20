@@ -23,7 +23,7 @@ public final class TemplateSerializer {
 
     /// Serializes the AST into Bytes.
     public func serialize(ast: [TemplateSyntax]) -> Future<View> {
-        return Future<TemplateData>.flatMap { try self.render(ast: ast) }.map(to: Data.self) { context in
+        return Future<TemplateData>.flatMap(on: container) { try self.render(ast: ast) }.map(to: Data.self) { context in
             if case .null = context {
                 return Data()
             }
@@ -48,7 +48,7 @@ public final class TemplateSerializer {
     private func render(ast: [TemplateSyntax]) throws -> Future<TemplateData> {
         return try ast.map { syntax -> Future<TemplateData> in
             return try self.render(syntax: syntax)
-        }.map(to: TemplateData.self) { parts in
+        }.map(to: TemplateData.self, on: container) { parts in
             return .array(parts)
         }
     }
@@ -61,7 +61,7 @@ public final class TemplateSerializer {
 
         return try tag.parameters.map { parameter in
             return try self.render(syntax: parameter)
-        }.flatMap(to: TemplateData.self) { inputs in
+        }.flatMap(to: TemplateData.self, on: container) { inputs in
             let tagContext = TagContext(
                 name: tag.name,
                 parameters: inputs,
@@ -80,11 +80,11 @@ public final class TemplateSerializer {
     private func render(constant: TemplateConstant, source: TemplateSource) -> Future<TemplateData> {
         switch constant {
         case .bool(let bool):
-            return Future(.bool(bool))
+            return Future.map(on: container) { .bool(bool) }
         case .double(let double):
-            return Future(.double(double))
+            return Future.map(on: container) { .double(double) }
         case .int(let int):
-            return Future(.int(int))
+            return Future.map(on: container) { .int(int) }
         case .string(let ast):
             return serialize(ast: ast).map(to: TemplateData.self) { view in
                 return .data(view.data)
@@ -137,7 +137,7 @@ public final class TemplateSerializer {
             } else if let next = conditional.next {
                 return try self.render(conditional: next, source: source)
             } else {
-                return Future(.null)
+                return Future.map(on: self.container) { .null }
             }
         }
     }
@@ -168,14 +168,14 @@ public final class TemplateSerializer {
                 copy["index"] = .int(index)
                 let serializer = TemplateSerializer(
                     renderer: self.renderer,
-                    context: .init(data: .dictionary(copy)),
+                    context: .init(data: .dictionary(copy), on: self.container),
                     using: self.container
                 )
                 return serializer.serialize(ast: iterator.body)
             }
 
             func merge(views: [Future<View>]) -> Future<TemplateData> {
-                return views.map(to: TemplateData.self) { views in
+                return views.map(to: TemplateData.self, on: self.container) { views in
                     var data = Data()
                     for view in views {
                         data += view.data
@@ -185,23 +185,23 @@ public final class TemplateSerializer {
             }
 
             switch data {
-            case .stream(let stream):
-                let promise = Promise(TemplateData.self)
-
-                /// handle streaming bodies
-                var views: [Future<View>] = []
-                var index = 0
-
-                stream.drain { item in
-                    let view = renderIteration(item: item, index: index)
-                    index += 1
-                    views.append(view)
-                }.catch { error in
-                    promise.fail(error)
-                }.finally {
-                    merge(views: views).chain(to: promise)
-                }
-                return promise.future
+//            case .stream(let stream):
+//                let promise = container.eventLoop.newPromise(TemplateData.self)
+//
+//                /// handle streaming bodies
+//                var views: [Future<View>] = []
+//                var index = 0
+//
+//                stream.drain { item in
+//                    let view = renderIteration(item: item, index: index)
+//                    index += 1
+//                    views.append(view)
+//                }.catch { error in
+//                    promise.fail(error)
+//                }.finally {
+//                    merge(views: views).chain(to: promise)
+//                }
+//                return promise.future
             default:
                 guard let data = data.array else {
                     throw TemplateError.serialize(reason: "Could not convert iterator data to array.", template: source, source: .capture())
@@ -231,7 +231,7 @@ public final class TemplateSerializer {
             }
         case .identifier(let id): return context.fetch(at: id.path)
         case .tag(let tag): return try render(tag: tag, source: syntax.source)
-        case .raw(let raw): return Future(.data(raw.data))
+        case .raw(let raw): return Future.map(on: container) { .data(raw.data) }
         case .conditional(let cond): return try render(conditional: cond, source: syntax.source)
         case .embed(let embed): return try render(embed: embed, source: syntax.source)
         case .iterator(let it): return try render(iterator: it, source: syntax.source)
