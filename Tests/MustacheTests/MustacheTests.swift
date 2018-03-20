@@ -9,8 +9,7 @@ class MustacheTests: XCTestCase {
     var renderer: MustacheRenderer!
 
     override func setUp() {
-        let worker = try! DefaultEventLoop(label: "codes.vapor.test.mustache")
-        let container = BasicContainer(config: .init(), environment: .development, services: .init(), on: worker)
+        let container = BasicContainer(config: .init(), environment: .development, services: .init(), on: EmbeddedEventLoop())
         renderer = MustacheRenderer(using: container)
     }
 
@@ -49,7 +48,7 @@ class MustacheTests: XCTestCase {
 
 extension MustacheRenderer {
     func testRender(_ template: String, _ data: TemplateData) throws -> String {
-        let view = try render(template: template.data(using: .utf8)!, data).blockingAwait()
+        let view = try render(template: template.data(using: .utf8)!, data).wait()
         return String(data: view.data, encoding: .utf8)!
     }
 }
