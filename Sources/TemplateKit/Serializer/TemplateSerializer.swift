@@ -162,10 +162,12 @@ public final class TemplateSerializer {
                 throw TemplateError.serialize(reason: "Could not convert iterator key to string.", template: source, source: .capture())
             }
 
-            func renderIteration(item: TemplateData, index: Int) -> Future<View> {
+            func renderIteration(item: TemplateData, index: Int, count: Int) -> Future<View> {
                 var copy = self.context.data.dictionary ?? [:]
                 copy[key] = item
                 copy["index"] = .int(index)
+                copy["isFirst"] = .bool(index == 0)
+                copy["isLast"] = .bool(index == count - 1)
                 let serializer = TemplateSerializer(
                     renderer: self.renderer,
                     context: .init(data: .dictionary(copy), on: self.container),
@@ -185,30 +187,13 @@ public final class TemplateSerializer {
             }
 
             switch data {
-//            case .stream(let stream):
-//                let promise = container.eventLoop.newPromise(TemplateData.self)
-//
-//                /// handle streaming bodies
-//                var views: [Future<View>] = []
-//                var index = 0
-//
-//                stream.drain { item in
-//                    let view = renderIteration(item: item, index: index)
-//                    index += 1
-//                    views.append(view)
-//                }.catch { error in
-//                    promise.fail(error)
-//                }.finally {
-//                    merge(views: views).chain(to: promise)
-//                }
-//                return promise.future
             default:
                 guard let data = data.array else {
                     throw TemplateError.serialize(reason: "Could not convert iterator data to array.", template: source, source: .capture())
                 }
 
                 let views = data.enumerated().map { (i, item) -> Future<View> in
-                    renderIteration(item: item, index: i)
+                    renderIteration(item: item, index: i, count: data.count)
                 }
 
                 return merge(views: views)
