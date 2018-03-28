@@ -1,3 +1,6 @@
+import Core
+import Foundation
+
 internal final class TemplateDataSingleValueEncoder: SingleValueEncodingContainer {
     var codingPath: [CodingKey]
     var partialData: PartialTemplateData
@@ -21,6 +24,10 @@ internal final class TemplateDataSingleValueEncoder: SingleValueEncodingContaine
 
     func encode(_ value: Double) throws {
         partialData.set(to: .double(value), at: codingPath)
+    }
+
+    func encode(_ value: Float) throws {
+        partialData.set(to: .double(.init(value)), at: codingPath)
     }
 
     func encode(_ value: String) throws {

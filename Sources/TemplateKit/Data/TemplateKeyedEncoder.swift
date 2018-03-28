@@ -1,3 +1,5 @@
+import Foundation
+
 internal final class TemplateDataKeyedEncoder<K>: KeyedEncodingContainerProtocol
     where K: CodingKey
 {
@@ -43,6 +45,10 @@ internal final class TemplateDataKeyedEncoder<K>: KeyedEncodingContainerProtocol
 
     func encode(_ value: Double, forKey key: K) throws {
         partialData.set(to: .double(value), at: codingPath + [key])
+    }
+
+    func encode(_ value: Float, forKey key: K) throws {
+        partialData.set(to: .double(.init(value)), at: codingPath + [key])
     }
 
     func encode(_ value: Int, forKey key: K) throws {
