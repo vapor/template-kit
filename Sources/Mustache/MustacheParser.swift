@@ -1,5 +1,4 @@
-import CodableKit
-import Foundation
+import Core
 import TemplateKit
 
 /// Parses template data into an AST following mustache syntax

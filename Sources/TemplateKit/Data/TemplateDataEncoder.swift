@@ -1,5 +1,4 @@
-import Async
-import CodableKit
+import Core
 
 /// Converts encodable objects to TemplateData.
 public final class TemplateDataEncoder {

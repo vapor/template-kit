@@ -15,9 +15,9 @@ let package = Package(
         .package(url: "https://github.com/vapor/service.git", from: "1.0.0-rc.2"),
     ],
     targets: [
-        .target(name: "Mustache", dependencies: ["TemplateKit"]),
+        .target(name: "Mustache", dependencies: ["Core", "TemplateKit"]),
         .testTarget(name: "MustacheTests", dependencies: ["Mustache"]),
-        .target(name: "TemplateKit", dependencies: ["Async", "Bits", "Service"]),
+        .target(name: "TemplateKit", dependencies: ["Async", "Bits", "Core", "Service"]),
         .testTarget(name: "TemplateKitTests", dependencies: ["TemplateKit"]),
     ]
 )
