@@ -17,7 +17,7 @@ let package = Package(
     targets: [
         .target(name: "Mustache", dependencies: ["TemplateKit"]),
         .testTarget(name: "MustacheTests", dependencies: ["Mustache"]),
-        .target(name: "TemplateKit", dependencies: ["Async", "Bits", "CodableKit", "Service"]),
+        .target(name: "TemplateKit", dependencies: ["Async", "Bits", "Service"]),
         .testTarget(name: "TemplateKitTests", dependencies: ["TemplateKit"]),
     ]
 )

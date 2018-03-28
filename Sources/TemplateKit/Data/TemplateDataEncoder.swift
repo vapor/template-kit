@@ -56,18 +56,6 @@ internal final class _TemplateDataEncoder: Encoder {
     }
 }
 
-///// MARK: Stream
-//
-//extension _TemplateDataEncoder: StreamEncoder {
-//    func encodeStream<O>(_ stream: O) throws where O : OutputStream, O.Output == Encodable {
-//        let stream = stream.map(to: TemplateData.self) { encodable in
-//            return try TemplateDataEncoder().encode(encodable)
-//        }
-//
-//        self.partialData.set(to: .stream(AnyOutputStream(stream)), at: codingPath)
-//    }
-//}
-
 /// MARK: Future
 
 extension _TemplateDataEncoder: FutureEncoder {
