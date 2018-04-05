@@ -9,13 +9,13 @@ public final class TemplateSerializer {
     public let renderer: TemplateRenderer
 
     /// The current context.
-    public let context: TemplateContext
+    public let context: TemplateDataContext
 
     /// The serializer's container.
     public let container: Container
 
     /// Creates a new TemplateSerializer
-    public init(renderer: TemplateRenderer, context: TemplateContext, using container: Container) {
+    public init(renderer: TemplateRenderer, context: TemplateDataContext, using container: Container) {
         self.renderer = renderer
         self.context = context
         self.container = container
@@ -85,7 +85,9 @@ public final class TemplateSerializer {
             return Future.map(on: container) { .double(double) }
         case .int(let int):
             return Future.map(on: container) { .int(int) }
-        case .string(let ast):
+        case .string(let string):
+            return Future.map(on: container) { .string(string) }
+        case .interpolated(let ast):
             return serialize(ast: ast).map(to: TemplateData.self) { view in
                 return .data(view.data)
             }
@@ -170,7 +172,7 @@ public final class TemplateSerializer {
                 copy["isLast"] = .bool(index == count - 1)
                 let serializer = TemplateSerializer(
                     renderer: self.renderer,
-                    context: .init(data: .dictionary(copy), on: self.container),
+                    context: .init(data: .dictionary(copy)),
                     using: self.container
                 )
                 return serializer.serialize(ast: iterator.body)
@@ -214,7 +216,7 @@ public final class TemplateSerializer {
                     reason: "Unsupported expression: \(expr) at \(syntax.source)", template: syntax.source, source: .capture()
                 )
             }
-        case .identifier(let id): return context.fetch(at: id.path)
+        case .identifier(let id): return context.data.asyncGet(at: id.path, on: container)
         case .tag(let tag): return try render(tag: tag, source: syntax.source)
         case .raw(let raw): return Future.map(on: container) { .data(raw.data) }
         case .conditional(let cond): return try render(conditional: cond, source: syntax.source)

@@ -20,7 +20,7 @@ public struct TagContext {
     public let container: Container
 
     /// The template data context
-    public let context: TemplateContext
+    public let context: TemplateDataContext
 
     /// The serializer that created this context
     public let serializer: TemplateSerializer
@@ -31,7 +31,7 @@ public struct TagContext {
         parameters: [TemplateData],
         body: [TemplateSyntax]?,
         source: TemplateSource,
-        context: TemplateContext,
+        context: TemplateDataContext,
         serializer: TemplateSerializer,
         using container: Container
     ) {

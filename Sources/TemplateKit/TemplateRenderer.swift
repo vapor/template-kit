@@ -43,7 +43,7 @@ extension TemplateRenderer {
 
             let serializer = TemplateSerializer(
                 renderer: self,
-                context: .init(data: context, on: self.container),
+                context: .init(data: context),
                 using: self.container
             )
             return serializer.serialize(ast: ast)

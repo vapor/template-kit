@@ -6,11 +6,11 @@ internal final class TemplateDataKeyedEncoder<K>: KeyedEncodingContainerProtocol
     typealias Key = K
 
     var codingPath: [CodingKey]
-    var partialData: PartialTemplateData
+    var context: TemplateDataContext
 
-    init(codingPath: [CodingKey], partialData: PartialTemplateData) {
+    init(codingPath: [CodingKey], context: TemplateDataContext) {
         self.codingPath = codingPath
-        self.partialData = partialData
+        self.context = context
     }
 
     func superEncoder() -> Encoder {
@@ -19,7 +19,7 @@ internal final class TemplateDataKeyedEncoder<K>: KeyedEncodingContainerProtocol
     }
 
     func encodeNil(forKey key: K) throws {
-        partialData.data.set(to: .null, at: codingPath + [key])
+        context.data.set(to: .null, at: codingPath + [key])
     }
 
     func nestedContainer<NestedKey>(
@@ -27,40 +27,40 @@ internal final class TemplateDataKeyedEncoder<K>: KeyedEncodingContainerProtocol
         ) -> KeyedEncodingContainer<NestedKey>
         where NestedKey : CodingKey
     {
-        let container = TemplateDataKeyedEncoder<NestedKey>(codingPath: codingPath + [key], partialData: partialData)
+        let container = TemplateDataKeyedEncoder<NestedKey>(codingPath: codingPath + [key], context: context)
         return KeyedEncodingContainer(container)
     }
 
     func nestedUnkeyedContainer(forKey key: K) -> UnkeyedEncodingContainer {
-        return TemplateDataUnkeyedEncoder(codingPath: codingPath + [key], partialData: partialData)
+        return TemplateDataUnkeyedEncoder(codingPath: codingPath + [key], context: context)
     }
 
     func superEncoder(forKey key: K) -> Encoder {
-        return _TemplateDataEncoder(partialData: partialData, codingPath: codingPath + [key])
+        return _TemplateDataEncoder(context: context, codingPath: codingPath + [key])
     }
 
     func encode(_ value: Bool, forKey key: K) throws {
-        partialData.data.set(to: .bool(value), at: codingPath + [key])
+        context.data.set(to: .bool(value), at: codingPath + [key])
     }
 
     func encode(_ value: Double, forKey key: K) throws {
-        partialData.data.set(to: .double(value), at: codingPath + [key])
+        context.data.set(to: .double(value), at: codingPath + [key])
     }
 
     func encode(_ value: Float, forKey key: K) throws {
-        partialData.data.set(to: .double(.init(value)), at: codingPath + [key])
+        context.data.set(to: .double(.init(value)), at: codingPath + [key])
     }
 
     func encode(_ value: Int, forKey key: K) throws {
-        partialData.data.set(to: .int(value), at: codingPath + [key])
+        context.data.set(to: .int(value), at: codingPath + [key])
     }
 
     func encode(_ value: String, forKey key: K) throws {
-        partialData.data.set(to: .string(value), at: codingPath + [key])
+        context.data.set(to: .string(value), at: codingPath + [key])
     }
 
     func encode<T>(_ value: T, forKey key: K) throws where T: Encodable {
-        let encoder = _TemplateDataEncoder(partialData: partialData, codingPath: codingPath + [key])
+        let encoder = _TemplateDataEncoder(context: context, codingPath: codingPath + [key])
         try value.encode(to: encoder)
     }
 }

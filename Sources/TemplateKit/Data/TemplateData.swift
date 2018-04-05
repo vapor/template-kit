@@ -171,6 +171,61 @@ extension TemplateData {
         default: return false
         }
     }
+
+
+
+    // Fetches data from that context at the supplied coding key.
+    public func asyncGet(at path: [CodingKey], on worker: Worker) -> Future<TemplateData> {
+        var promise = worker.eventLoop.newPromise(TemplateData.self)
+
+        var current = self
+        var iterator = path.makeIterator()
+
+        func handle(_ path: CodingKey) {
+            switch current {
+            case .array(let arr):
+                if let index = path.intValue, arr.count > index {
+                    let value = arr[index]
+                    current = value
+                    if let next = iterator.next() {
+                        handle(next)
+                    } else {
+                        promise.succeed(result: current)
+                    }
+                } else {
+                    promise.succeed(result: .null)
+                }
+            case .dictionary(let dict):
+                if let value = dict[ path.stringValue] {
+                    current = value
+                    if let next = iterator.next() {
+                        handle(next)
+                    } else {
+                        promise.succeed(result: current)
+                    }
+                } else {
+                    promise.succeed(result: .null)
+                }
+            case .future(let fut):
+                fut.do { value in
+                    current = value
+                    handle(path)
+                    }.catch { error in
+                        promise.fail(error: error)
+                }
+            default:
+                promise.succeed(result: .null)
+            }
+        }
+
+        if let first = iterator.next() {
+            handle(first)
+        } else {
+            promise.succeed(result: current)
+        }
+
+        return promise.futureResult
+    }
 }
 
 // MARK: Equatable

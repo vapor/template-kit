@@ -9,7 +9,7 @@ public final class TemplateDataEncoder {
     public func encode(_ encodable: Encodable) throws -> TemplateData {
         let encoder = _TemplateDataEncoder()
         try encodable.encode(to: encoder)
-        return encoder.partialData.data
+        return encoder.context.data
     }
 }
 
@@ -18,13 +18,10 @@ internal final class _TemplateDataEncoder: Encoder {
     var codingPath: [CodingKey]
     var userInfo: [CodingUserInfoKey: Any]
 
-    var partialData: PartialTemplateData
-    var context: TemplateData {
-        return partialData.data
-    }
+    var context: TemplateDataContext
 
-    init(partialData: PartialTemplateData = .init(), codingPath: [CodingKey] = []) {
-        self.partialData = partialData
+    init(context: TemplateDataContext = .init(data: .dictionary([:])), codingPath: [CodingKey] = []) {
+        self.context = context
         self.codingPath = codingPath
         self.userInfo = [:]
     }
@@ -33,7 +30,7 @@ internal final class _TemplateDataEncoder: Encoder {
     func container<Key: CodingKey>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key> {
         let keyed = TemplateDataKeyedEncoder<Key>(
             codingPath: codingPath,
-            partialData: partialData
+            context: context
         )
         return KeyedEncodingContainer(keyed)
     }
@@ -42,7 +39,7 @@ internal final class _TemplateDataEncoder: Encoder {
     func unkeyedContainer() -> UnkeyedEncodingContainer {
         return TemplateDataUnkeyedEncoder(
             codingPath: codingPath,
-            partialData: partialData
+            context: context
         )
     }
 
@@ -50,7 +47,7 @@ internal final class _TemplateDataEncoder: Encoder {
     func singleValueContainer() -> SingleValueEncodingContainer {
         return TemplateDataSingleValueEncoder(
             codingPath: codingPath,
-            partialData: partialData
+            context: context
         )
     }
 }
@@ -65,14 +62,14 @@ extension _TemplateDataEncoder: FutureEncoder {
             }
 
             let encoder = _TemplateDataEncoder(
-                partialData: self.partialData,
+                context: self.context,
                 codingPath: self.codingPath
             )
             try encodable.encode(to: encoder)
-            return encoder.context
+            return encoder.context.data
         }
 
-        self.partialData.data.set(to: .future(future), at: codingPath)
+        self.context.data.set(to: .future(future), at: codingPath)
     }
 }
 
