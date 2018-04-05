@@ -3,11 +3,7 @@ public final class TemplateConditional {
     public var body: [TemplateSyntax]
     public var next: TemplateConditional?
 
-    public init(
-        condition: TemplateSyntax,
-        body: [TemplateSyntax],
-        next: TemplateConditional?
-        ) {
+    public init(condition: TemplateSyntax, body: [TemplateSyntax], next: TemplateConditional?) {
         self.condition = condition
         self.body = body
         self.next = next

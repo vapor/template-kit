@@ -22,6 +22,14 @@ public enum TemplateData {
 // MARK: Polymorphic
 
 extension TemplateData {
+    public init(dictionary: [String : TemplateData]) {
+        self = .dictionary(dictionary)
+    }
+
+    public init(array: [TemplateData]) {
+        self = .array(array)
+    }
+
     /// Attempts to convert to string or returns nil.
     public var string: String? {
         switch self {

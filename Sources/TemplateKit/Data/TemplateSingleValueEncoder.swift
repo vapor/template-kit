@@ -11,27 +11,27 @@ internal final class TemplateDataSingleValueEncoder: SingleValueEncodingContaine
     }
 
     func encodeNil() throws {
-        partialData.set(to: .null, at: codingPath)
+        partialData.data.set(to: .null, at: codingPath)
     }
 
     func encode(_ value: Bool) throws {
-        partialData.set(to: .bool(value), at: codingPath)
+        partialData.data.set(to: .bool(value), at: codingPath)
     }
 
     func encode(_ value: Int) throws {
-        partialData.set(to: .int(value), at: codingPath)
+        partialData.data.set(to: .int(value), at: codingPath)
     }
 
     func encode(_ value: Double) throws {
-        partialData.set(to: .double(value), at: codingPath)
+        partialData.data.set(to: .double(value), at: codingPath)
     }
 
     func encode(_ value: Float) throws {
-        partialData.set(to: .double(.init(value)), at: codingPath)
+        partialData.data.set(to: .double(.init(value)), at: codingPath)
     }
 
     func encode(_ value: String) throws {
-        partialData.set(to: .string(value), at: codingPath)
+        partialData.data.set(to: .string(value), at: codingPath)
     }
 
     func encode<T>(_ value: T) throws where T: Encodable {

@@ -19,7 +19,7 @@ internal final class TemplateDataKeyedEncoder<K>: KeyedEncodingContainerProtocol
     }
 
     func encodeNil(forKey key: K) throws {
-        partialData.set(to: .null, at: codingPath + [key])
+        partialData.data.set(to: .null, at: codingPath + [key])
     }
 
     func nestedContainer<NestedKey>(
@@ -40,28 +40,26 @@ internal final class TemplateDataKeyedEncoder<K>: KeyedEncodingContainerProtocol
     }
 
     func encode(_ value: Bool, forKey key: K) throws {
-        partialData.set(to: .bool(value), at: codingPath + [key])
+        partialData.data.set(to: .bool(value), at: codingPath + [key])
     }
 
     func encode(_ value: Double, forKey key: K) throws {
-        partialData.set(to: .double(value), at: codingPath + [key])
+        partialData.data.set(to: .double(value), at: codingPath + [key])
     }
 
     func encode(_ value: Float, forKey key: K) throws {
-        partialData.set(to: .double(.init(value)), at: codingPath + [key])
+        partialData.data.set(to: .double(.init(value)), at: codingPath + [key])
     }
 
     func encode(_ value: Int, forKey key: K) throws {
-        partialData.set(to: .int(value), at: codingPath + [key])
+        partialData.data.set(to: .int(value), at: codingPath + [key])
     }
 
     func encode(_ value: String, forKey key: K) throws {
-        partialData.set(to: .string(value), at: codingPath + [key])
+        partialData.data.set(to: .string(value), at: codingPath + [key])
     }
 
-    func encode<T>(_ value: T, forKey key: K) throws
-        where T: Encodable
-    {
+    func encode<T>(_ value: T, forKey key: K) throws where T: Encodable {
         let encoder = _TemplateDataEncoder(partialData: partialData, codingPath: codingPath + [key])
         try value.encode(to: encoder)
     }

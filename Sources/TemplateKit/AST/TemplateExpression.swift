@@ -1,31 +1,32 @@
 /// An expression, like `1 + 2`, `!1`, and `a || b`
 public enum TemplateExpression {
-    case infix(operator: ExpressionInfixOperator, left: TemplateSyntax, right: TemplateSyntax)
-    case prefix(operator: ExpressionPrefixOperator, right: TemplateSyntax)
-    case postfix(operator: ExpressionPostfixOperator, left: TemplateSyntax)
-}
 
-/// a <op> a
-public enum ExpressionInfixOperator {
-    case add
-    case subtract
-    case lessThan
-    case greaterThan
-    case multiply
-    case divide
-    case equal
-    case notEqual
-    case and
-    case or
-}
+    /// a <op> a
+    public enum InfixOperator {
+        case add
+        case subtract
+        case lessThan
+        case greaterThan
+        case multiply
+        case divide
+        case equal
+        case notEqual
+        case and
+        case or
+    }
 
-/// <op>a
-public enum ExpressionPrefixOperator {
-    case not
-}
+    /// <op>a
+    public enum PrefixOperator {
+        case not
+    }
 
-/// a<op>
-public enum ExpressionPostfixOperator {}
+    /// a<op>
+    public enum PostfixOperator {}
+    
+    case infix(`operator`: InfixOperator, left: TemplateSyntax, right: TemplateSyntax)
+    case prefix(`operator`: PrefixOperator, right: TemplateSyntax)
+    case postfix(`operator`: PostfixOperator, left: TemplateSyntax)
+}
 
 extension TemplateExpression: CustomStringConvertible {
     public var description: String {

@@ -72,7 +72,7 @@ extension _TemplateDataEncoder: FutureEncoder {
             return encoder.context
         }
 
-        self.partialData.set(to: .future(future), at: codingPath)
+        self.partialData.data.set(to: .future(future), at: codingPath)
     }
 }
 

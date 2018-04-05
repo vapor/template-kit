@@ -14,11 +14,11 @@ internal final class TemplateDataUnkeyedEncoder: UnkeyedEncodingContainer {
         self.codingPath = codingPath
         self.partialData = partialData
         self.count = 0
-        partialData.set(to: .array([]), at: codingPath)
+        partialData.data.set(to: .array([]), at: codingPath)
     }
 
     func encodeNil() throws {
-        partialData.set(to: .null, at: codingPath + [index])
+        partialData.data.set(to: .null, at: codingPath + [index])
     }
 
     func nestedContainer<NestedKey>(keyedBy keyType: NestedKey.Type) -> KeyedEncodingContainer<NestedKey>
@@ -37,19 +37,19 @@ internal final class TemplateDataUnkeyedEncoder: UnkeyedEncodingContainer {
     }
 
     func encode(_ value: Bool) throws {
-        partialData.set(to: .bool(value), at: codingPath + [index])
+        partialData.data.set(to: .bool(value), at: codingPath + [index])
     }
 
     func encode(_ value: Int) throws {
-        partialData.set(to: .int(value), at: codingPath + [index])
+        partialData.data.set(to: .int(value), at: codingPath + [index])
     }
 
     func encode(_ value: Double) throws {
-        partialData.set(to: .double(value), at: codingPath + [index])
+        partialData.data.set(to: .double(value), at: codingPath + [index])
     }
 
     func encode(_ value: String) throws {
-        partialData.set(to: .string(value), at: codingPath + [index])
+        partialData.data.set(to: .string(value), at: codingPath + [index])
     }
 
     func encode<T>(_ value: T) throws where T: Encodable {

@@ -93,7 +93,7 @@ public final class TemplateSerializer {
     }
 
     // Renders an infix `TemplateExpression` to future `TemplateData`.
-    private func render(infix: ExpressionInfixOperator, left: TemplateSyntax, right: TemplateSyntax, source: TemplateSource) throws -> Future<TemplateData> {
+    private func render(infix: TemplateExpression.InfixOperator, left: TemplateSyntax, right: TemplateSyntax, source: TemplateSource) throws -> Future<TemplateData> {
         return try map(to: TemplateData.self, render(syntax: left), render(syntax: right)) { left, right in
             switch infix {
             case .equal: return .bool(left == right)
@@ -121,7 +121,7 @@ public final class TemplateSerializer {
     }
 
     // Renders an prefix `TemplateExpression` to future `TemplateData`.
-    private func render(prefix: ExpressionPrefixOperator, right: TemplateSyntax, source: TemplateSource) throws -> Future<TemplateData> {
+    private func render(prefix: TemplateExpression.PrefixOperator, right: TemplateSyntax, source: TemplateSource) throws -> Future<TemplateData> {
         return try render(syntax: right).map(to: TemplateData.self) { right in
             switch prefix {
             case .not: return .bool(right.bool.flatMap { !$0 } ?? false)
