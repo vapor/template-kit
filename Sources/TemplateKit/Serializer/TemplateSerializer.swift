@@ -188,18 +188,15 @@ public final class TemplateSerializer {
                 }
             }
 
-            switch data {
-            default:
-                guard let data = data.array else {
-                    throw TemplateError.serialize(reason: "Could not convert iterator data to array.", template: source, source: .capture())
-                }
-
-                let views = data.enumerated().map { (i, item) -> Future<View> in
-                    renderIteration(item: item, index: i, count: data.count)
-                }
-
-                return merge(views: views)
+            guard let data = data.array else {
+                throw TemplateError.serialize(reason: "Could not convert iterator data to array.", template: source, source: .capture())
             }
+
+            let views = data.enumerated().map { (i, item) -> Future<View> in
+                renderIteration(item: item, index: i, count: data.count)
+            }
+
+            return merge(views: views)
         }
     }
 
@@ -222,6 +219,7 @@ public final class TemplateSerializer {
         case .conditional(let cond): return try render(conditional: cond, source: syntax.source)
         case .embed(let embed): return try render(embed: embed, source: syntax.source)
         case .iterator(let it): return try render(iterator: it, source: syntax.source)
+        case .custom(let cust): return cust.render(self)
         }
     }
 }

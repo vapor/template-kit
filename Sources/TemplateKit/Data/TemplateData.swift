@@ -1,27 +1,55 @@
-import Async
-import Dispatch
-import Foundation
+/// TemplateKit's supported serializable data types.
+/// - note: This is different from types supported in the AST.
+public enum TemplateData: NestedData {
+    // MARK: Cases
 
-/// Data structure for passing data
-/// into Leaf templates as a context.
-public enum TemplateData {
+    /// A `Bool`.
+    ///
+    ///     true
+    ///
     case bool(Bool)
+
+    /// A `String`.
+    ///
+    ///     "hello"
+    ///
     case string(String)
+
+    /// An `Int`.
+    ///
+    ///     42
+    ///
     case int(Int)
+
+    /// A `Double`.
+    ///
+    ///     3.14
+    ///
     case double(Double)
+
+    /// `Data` blob.
+    ///
+    ///     Data([0x72, 0x73])
+    ///
     case data(Data)
+
+    /// A nestable `[String: TemplateData]` dictionary.
     case dictionary([String: TemplateData])
+
+    /// A nestable `[TemplateData]` array.
     case array([TemplateData])
+
+    /// A `Future` value.
     case future(Future<TemplateData>)
-    // case stream(AnyOutputStream<TemplateData>)
-    public typealias Lazy = () -> (TemplateData)
-    case lazy(Lazy)
+
+    // A lazily-resolvable `TemplateData`.
+    case lazy(() -> (TemplateData))
+
+    /// Null.
     case null
-}
 
-// MARK: Polymorphic
+    // MARK: Init
 
-extension TemplateData {
     public init(dictionary: [String : TemplateData]) {
         self = .dictionary(dictionary)
     }
@@ -29,6 +57,8 @@ extension TemplateData {
     public init(array: [TemplateData]) {
         self = .array(array)
     }
+
+    // MARK: Polymorphic
 
     /// Attempts to convert to string or returns nil.
     public var string: String? {
@@ -172,7 +202,7 @@ extension TemplateData {
         }
     }
 
-
+    // MARK: Get
 
     // Fetches data from that context at the supplied coding key.
     public func asyncGet(at path: [CodingKey], on worker: Worker) -> Future<TemplateData> {
@@ -210,8 +240,8 @@ extension TemplateData {
                 fut.do { value in
                     current = value
                     handle(path)
-                    }.catch { error in
-                        promise.fail(error: error)
+                }.catch { error in
+                    promise.fail(error: error)
                 }
             default:
                 promise.succeed(result: .null)

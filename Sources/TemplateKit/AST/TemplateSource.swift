@@ -1,9 +1,27 @@
+/// Represents a location in a template's source file.
+///
+/// Every `TemplateSyntax` struct has an associated `TemplateSource`. This helps generate better
+/// debug information when something goes wrong.
 public struct TemplateSource {
+    /// Path to the template file.
     public var file: String
+
+    /// Line number.
     public let line: Int
+
+    /// Column number.
     public let column: Int
+
+    /// Character offset range (starting from first character == 0).
     public let range: Range<Int>
 
+    /// Creates a new `TemplateSource`.
+    ///
+    /// - parameters:
+    ///     - file: Path to the template file.
+    ///     - line: Line number.
+    ///     - column: Column number.
+    ///     - range: Character offset range (starting from first character == 0).
     public init(file: String, line: Int, column: Int, range: Range<Int>) {
         self.file = file
         self.line = line
@@ -12,21 +30,50 @@ public struct TemplateSource {
     }
 }
 
-/// Start of a source range
+/// Start of a source range. This type is useful for marking the start of a `TemplateSource` when
+/// using a `TemplateByteScanner`.
+///
+/// See `TemplateByteScanner`.
 public struct TemplateSourceStart {
+    /// Path to the template file.
     public let file: String
+
+    /// Line number.
     public let line: Int
+
+    /// Column number.
     public let column: Int
+
+    /// Character offset (starting from first character == 0).
+    /// This will be used to generate the `TemplateSource.range`.
     public let offset: Int
+
+    /// Creates a new `TemplateSourceStart`.
+    ///
+    /// - parameters:
+    ///     - file: Path to the template file.
+    ///     - line: Line number.
+    ///     - column: Column number.
+    ///     - offset: Character offset (starting from first character == 0).
+    ///               This will be used to generate the `TemplateSource.range`.
+    public init(file: String, line: Int, column: Int, offset: Int) {
+        self.file = file
+        self.line = line
+        self.column = column
+        self.offset = offset
+    }
 }
 
 extension TemplateByteScanner {
-    /// Creates a source range starting location.
+    /// Creates a new `TemplateSourceStart` at the current location.
     public func makeSourceStart() -> TemplateSourceStart {
         return .init(file: file, line: line, column: column, offset: offset)
     }
 
-    /// Closes a source range start location with the current location.
+    /// Closes a `TemplateSourceStart` at the current location, creating a `TemplateSource`.
+    ///
+    /// - parameters:
+    ///     - sourceStart: `TemplateSourceStart` to complete.
     public func makeSource(using sourceStart: TemplateSourceStart) -> TemplateSource {
         return .init(
             file: sourceStart.file,

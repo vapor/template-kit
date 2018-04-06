@@ -1,9 +1,9 @@
-/// A reference wrapper around `TemplateData`.
+/// A reference wrapper around `TemplateData`. 
 public final class TemplateDataContext {
-    /// The wrapped `TemplateData`
+    /// The referenced `TemplateData`
     public var data: TemplateData
 
-    /// Create a new `TemplateContext`.
+    /// Create a new `TemplateDataContext`.
     public init(data: TemplateData) {
         self.data = data
     }
