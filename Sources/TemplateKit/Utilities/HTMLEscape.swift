@@ -1,7 +1,8 @@
 import Foundation
 
 extension String {
-    func htmlEscaped() -> String {
+    /// Escapes HTML entities in a `String`.
+    internal func htmlEscaped() -> String {
         /// FIXME: performance
         return replacingOccurrences(of: "&", with: "&amp;")
             .replacingOccurrences(of: "\"", with: "&quot;")

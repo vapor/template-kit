@@ -1,10 +1,15 @@
-import Async
-
+/// Converts a `String` to all uppercase characters.
+///
+///     uppercase(<item>)
+///
 public final class Uppercase: TagRenderer {
+    /// Creates a new `Uppercase` tag renderer.
     public init() {}
-    public func render(tag parsed: TagContext) throws -> Future<TemplateData> {
+
+    /// See `TagRenderer`.
+    public func render(tag parsed: TagContext) throws -> TemplateData {
         try parsed.requireParameterCount(1)
         let string = parsed.parameters[0].string?.uppercased() ?? ""
-        return Future.map(on: parsed.container) { .string(string) }
+        return .string(string)
     }
 }

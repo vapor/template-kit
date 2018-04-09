@@ -1,10 +1,15 @@
-import Async
-
+/// Converts a `String` to all lowercase characters.
+///
+///     lowercase(<item>)
+///
 public final class Lowercase: TagRenderer {
+    /// Creates a new `Lowercase` tag renderer.
     public init() {}
-    public func render(tag parsed: TagContext) throws -> Future<TemplateData> {
+
+    /// See `TagRenderer`.
+    public func render(tag parsed: TagContext) throws -> TemplateData {
         try parsed.requireParameterCount(1)
         let string = parsed.parameters[0].string?.lowercased() ?? ""
-        return Future.map(on: parsed.container) { .string(string) }
+        return .string(string)
     }
 }

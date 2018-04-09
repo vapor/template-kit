@@ -1,7 +1,7 @@
 @_exported import Core
+@_exported import Service
 
-
-// move to core
+// FIXME: move to core
 
 public protocol NestedData {
     var dictionary: [String: Self]? { get }

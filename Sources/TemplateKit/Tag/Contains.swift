@@ -1,19 +1,23 @@
-import Async
-
+/// Returns `true` if the supplied array contains a given item.
+///
+///     contains(<array>, <item>
+///
 public final class Contains: TagRenderer {
+    /// Creates a new `Contains` tag renderer.
     public init() {}
-    public func render(tag parsed: TagContext) throws -> Future<TemplateData> {
-        let promise = parsed.container.eventLoop.newPromise(TemplateData.self)
 
+    /// See `TagRenderer`.
+    public func render(tag parsed: TagContext) throws -> TemplateData {
+        /// Require two parameters.
         try parsed.requireParameterCount(2)
 
-        if let array = parsed.parameters[0].array {
-            let compare = parsed.parameters[1]
-            promise.succeed(result: .bool(array.contains(compare)))
-        } else {
-            promise.succeed(result: .bool(false))
+        /// Convert first param to an array or return false.
+        guard let array = parsed.parameters[0].array  else {
+            return .bool(false)
         }
 
-        return promise.futureResult
+        /// Return `true` if the array contains the item.
+        let compare = parsed.parameters[1]
+        return .bool(array.contains(compare))
     }
 }

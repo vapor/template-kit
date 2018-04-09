@@ -2,7 +2,7 @@ import Async
 import Foundation
 
 public protocol TagRenderer {
-    func render(tag: TagContext) throws -> Future<TemplateData>
+    func render(tag: TagContext) throws -> TemplateData
 }
 
 // MARK: Global

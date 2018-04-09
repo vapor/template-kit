@@ -1,27 +1,28 @@
-import Async
-import Dispatch
-import Foundation
-import Service
-
-/// Serializes parsed AST, using context, into view bytes.
+/// Serializes parsed AST, using context, into `View`s.
+///
+/// See `TemplateRenderer` for more information.
 public final class TemplateSerializer {
-    /// The serializer's parent renderer.
+    /// The serializer's parent `TemplateRenderer`.
     public let renderer: TemplateRenderer
 
-    /// The current context.
+    /// The current `TemplateDataContext`.
     public let context: TemplateDataContext
 
-    /// The serializer's container.
+    /// The serializer's `Container`. Used to create `TagContext`s.
     public let container: Container
 
-    /// Creates a new TemplateSerializer
+    /// Creates a new `TemplateSerializer`.
     public init(renderer: TemplateRenderer, context: TemplateDataContext, using container: Container) {
         self.renderer = renderer
         self.context = context
         self.container = container
     }
 
-    /// Serializes the AST into Bytes.
+    /// Serializes the supplied AST into a `View`.
+    ///
+    /// - parameters:
+    ///     - ast: Collection of `TemplateSyntax` (AST) to serialize using this serializer's context and container.
+    /// - returns: A `Future` `View` containing the rendered template.
     public func serialize(ast: [TemplateSyntax]) -> Future<View> {
         return Future<TemplateData>.flatMap(on: container) { try self.render(ast: ast) }.map(to: Data.self) { context in
             if case .null = context {
@@ -64,7 +65,7 @@ public final class TemplateSerializer {
 
         return try tag.parameters.map { parameter in
             return try self.render(syntax: parameter)
-        }.flatMap(to: TemplateData.self, on: container) { inputs in
+        }.map(to: TemplateData.self, on: container) { inputs in
             let tagContext = TagContext(
                 name: tag.name,
                 parameters: inputs,

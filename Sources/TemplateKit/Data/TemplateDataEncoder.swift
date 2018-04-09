@@ -1,11 +1,9 @@
-import Core
-
-/// Converts encodable objects to TemplateData.
+/// Converts `Encodable` objects to `TemplateData`.
 public final class TemplateDataEncoder {
-    /// Create a new LeafEncoder.
+    /// Create a new `TemplateDataEncoder`.
     public init() {}
 
-    /// Encode an encodable item to leaf data.
+    /// Encode an `Encodable` item to `TemplateData`.
     public func encode<E>(_ encodable: E) throws -> TemplateData where E: Encodable {
         let encoder = _TemplateDataEncoder()
         try encodable.encode(to: encoder)

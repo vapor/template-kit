@@ -1,21 +1,37 @@
 import Bits
-import Foundation
 
-/// Used to facilitate parsing byte arrays
+/// Used to facilitate parsing byte arrays.
 public final class TemplateByteScanner {
-    /// TemplateSource location information
+    /// Path to file being parsed currently. If the bytes being parsed are not from a file on disk,
+    /// instead use any string describing where the bytes came from.
     public var file: String
+
+    /// Current byte offset into the file.
     public var offset: Int
+
+    /// Current line offset into the file.
     public var line: Int
+
+    /// Current column offset into the current line.
     public var column: Int
+
+    /// `Data` being scanned.
+    public let data: Data
 
     /// Byte location information
     var pointer: UnsafePointer<UInt8>
-    let endAddress: UnsafePointer<UInt8>
-    var buffer: UnsafeBufferPointer<UInt8>
-    public let data: Data
 
-    /// Create a new byte scanner
+    /// Byte end address.
+    let endAddress: UnsafePointer<UInt8>
+
+    /// Current buffer.
+    var buffer: UnsafeBufferPointer<UInt8>
+
+    /// Create a new `TemplateByteScanner`.
+    ///
+    /// - parameters:
+    ///     - data: Bytes to scan.
+    ///     - file: Path to file bytes were loaded from or description of bytes.
     public init(data: Data, file: String) {
         self.file = file
         self.data = data
@@ -29,12 +45,13 @@ public final class TemplateByteScanner {
         self.line = 0
         self.column = 0
     }
-}
 
-// MARK: Core
-
-extension TemplateByteScanner {
-    /// Peeks ahead to bytes in front of current byte
+    /// Peeks ahead to byte in front of current byte by supplied amount.
+    ///
+    /// - parameters:
+    ///     - amount: Number of bytes to skip.
+    /// - returns:
+    ///     - Byte requested if not past end of data.
     public func peek(by amount: Int = 0) -> UInt8? {
         guard pointer.advanced(by: amount) < endAddress else {
             return nil
@@ -60,9 +77,8 @@ extension TemplateByteScanner {
         }
         return element
     }
-}
 
-extension TemplateByteScanner {
+    /// Calls `pop()`, throwing an error if there are no more bytes.
     @discardableResult
     public func requirePop() throws -> Byte {
         guard let byte = pop() else {
@@ -71,12 +87,14 @@ extension TemplateByteScanner {
         return byte
     }
 
+    /// Calls `requirePop()` `n` times.
     public func requirePop(n: Int) throws {
         for _ in 0..<n {
             try requirePop()
         }
     }
 
+    /// Returns `true` if the upcoming bytes match the supplied array of bytes.
     public func peekMatches(_ bytes: [Byte]) -> Bool {
         var iterator = bytes.makeIterator()
         var i = 0

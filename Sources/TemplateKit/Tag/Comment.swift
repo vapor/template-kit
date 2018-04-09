@@ -1,8 +1,10 @@
-import Async
-
+/// Ignores zero or more parameters always returning an empty `String`.
 public final class Comment: TagRenderer {
+    /// Creates a new `Comment` tag renderer.
     public init() {}
-    public func render(tag parsed: TagContext) throws -> Future<TemplateData> {
-        return Future.map(on: parsed.container) { .string("") }
+
+    /// See `TagRenderer`.
+    public func render(tag parsed: TagContext) throws -> TemplateData {
+        return .string("")
     }
 }

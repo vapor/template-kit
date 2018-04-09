@@ -108,6 +108,6 @@ extension UUID: TemplateDataRepresentable {
 extension Date: TemplateDataRepresentable {
     /// See `TemplateDataRepresentable`
     public func convertToTemplateData() throws -> TemplateData {
-        return .string(description)
+        return .double(timeIntervalSince1970)
     }
 }
