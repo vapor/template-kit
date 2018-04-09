@@ -15,7 +15,7 @@ public final class Count: TagRenderer {
         let res: TemplateData
 
         /// Switch on the first param.
-        switch tag.parameters[0] {
+        switch tag.parameters[0].storage {
         case .dictionary(let dict): res = .int(dict.values.count)
         case .array(let arr): res = .int(arr.count)
         default: res = .null

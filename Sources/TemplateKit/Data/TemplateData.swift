@@ -1,6 +1,6 @@
 /// TemplateKit's supported serializable data types.
 /// - note: This is different from types supported in the AST.
-public enum TemplateData: NestedData, Equatable {
+public struct TemplateData: NestedData, Equatable {
     // MARK: Equatable
 
     /// See `Equatable`.
@@ -17,7 +17,7 @@ public enum TemplateData: NestedData, Equatable {
         }
 
         /// Strict compare
-        switch (lhs, rhs) {
+        switch (lhs.storage, rhs.storage) {
         case (.array(let a), .array(let b)): return a == b
         case (.dictionary(let a), .dictionary(let b)): return a == b
         case (.bool(let a), .bool(let b)): return a == b
@@ -30,67 +30,78 @@ public enum TemplateData: NestedData, Equatable {
         }
     }
 
-    // MARK: Cases
+    /// Actual storage.
+    internal var storage: TemplateDataStorage
 
-    /// A `Bool`.
-    ///
-    ///     true
-    ///
-    case bool(Bool)
-
-    /// A `String`.
-    ///
-    ///     "hello"
-    ///
-    case string(String)
-
-    /// An `Int`.
-    ///
-    ///     42
-    ///
-    case int(Int)
-
-    /// A `Double`.
-    ///
-    ///     3.14
-    ///
-    case double(Double)
-
-    /// `Data` blob.
-    ///
-    ///     Data([0x72, 0x73])
-    ///
-    case data(Data)
-
-    /// A nestable `[String: TemplateData]` dictionary.
-    case dictionary([String: TemplateData])
-
-    /// A nestable `[TemplateData]` array.
-    case array([TemplateData])
-
-    /// A lazily-resolvable `TemplateData`.
-    case lazy(() -> (TemplateData))
-
-    /// Null.
-    case null
+    /// Creates a new `TemplateData`.
+    internal init(_ storage: TemplateDataStorage) {
+        self.storage = storage
+    }
 
     // MARK: Nested Data
 
-    /// See `NestedData`.
+    /// Creates a new `TemplateData` from an array.
     public init(array: [TemplateData]) {
-        self = .array(array)
+        storage = .array(array)
     }
 
-    /// See `NestedData`.
+    /// Creates a new `TemplateData` from a dictionary.
     public init(dictionary: [String: TemplateData]) {
-        self = .dictionary(dictionary)
+        storage = .dictionary(dictionary)
+    }
+
+    // MARK: Static
+
+    /// Creates a new `TemplateData` from a `Bool`.
+    public static func bool(_ value: Bool) -> TemplateData {
+        return .init(.bool(value))
+    }
+
+    /// Creates a new `TemplateData` from a `String`.
+    public static func string(_ value: String) -> TemplateData {
+        return .init(.string(value))
+    }
+
+    /// Creates a new `TemplateData` from am `Int`.
+    public static func int(_ value: Int) -> TemplateData {
+        return .init(.int(value))
+    }
+
+    /// Creates a new `TemplateData` from a `Double`.
+    public static func double(_ value: Double) -> TemplateData {
+        return .init(.double(value))
+    }
+
+    /// Creates a new `TemplateData` from `Data`.
+    public static func data(_ value: Data) -> TemplateData {
+        return .init(.data(value))
+    }
+
+    /// Creates a new `TemplateData` from `[String: TemplateData]`.
+    public static func dictionary(_ value: [String: TemplateData]) -> TemplateData {
+        return .init(.dictionary(value))
+    }
+
+    /// Creates a new `TemplateData` from `[TemplateData]`.
+    public static func array(_ value: [TemplateData]) -> TemplateData {
+        return .init(.array(value))
+    }
+
+    /// Creates a new `TemplateData` from `() -> TemplateData`.
+    public static func lazy(_ value: @escaping () -> TemplateData) -> TemplateData {
+        return .init(.lazy(value))
+    }
+
+    /// Creates a new null `TemplateData`.
+    public static var null: TemplateData {
+        return .init(.null)
     }
 
     // MARK: Fuzzy
 
     /// Attempts to convert to `String` or returns `nil`.
     public var string: String? {
-        switch self {
+        switch storage {
         case .bool(let bool):
             return bool.description
         case .double(let double):
@@ -110,7 +121,7 @@ public enum TemplateData: NestedData, Equatable {
 
     /// Attempts to convert to `Bool` or returns `nil`.
     public var bool: Bool? {
-        switch self {
+        switch storage {
         case .int(let i):
             switch i {
             case 1:
@@ -142,7 +153,7 @@ public enum TemplateData: NestedData, Equatable {
 
     /// Attempts to convert to `Double` or returns `nil`.
     public var double: Double? {
-        switch self {
+        switch storage {
         case .int(let i):
             return Double(i)
         case .double(let d):
@@ -158,7 +169,7 @@ public enum TemplateData: NestedData, Equatable {
 
     /// Attempts to convert to `Int` or returns `nil`.
     public var int: Int? {
-        switch self {
+        switch storage {
         case .int(let i):
             return i
         case .string(let s):
@@ -172,7 +183,7 @@ public enum TemplateData: NestedData, Equatable {
 
     /// Attempts to convert to `[String: TemplateData]` or returns `nil`.
     public var dictionary: [String: TemplateData]? {
-        switch self {
+        switch storage {
         case .dictionary(let d):
             return d
         default:
@@ -182,7 +193,7 @@ public enum TemplateData: NestedData, Equatable {
 
     /// Attempts to convert to `[TemplateData]` or returns `nil`.
     public var array: [TemplateData]? {
-        switch self {
+        switch storage {
         case .array(let a):
             return a
         default:
@@ -192,7 +203,7 @@ public enum TemplateData: NestedData, Equatable {
 
     /// Attempts to convert to `Data` or returns `nil`.
     public var data: Data? {
-        switch self {
+        switch storage {
         case .data(let d):
             return d
         case .string(let s):
@@ -224,7 +235,7 @@ public enum TemplateData: NestedData, Equatable {
 
     /// Returns `true` if the data is `null`.
     public var isNull: Bool {
-        switch self {
+        switch storage {
         case .null: return true
         default: return false
         }
