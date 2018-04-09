@@ -7,13 +7,6 @@ public protocol TemplateDataRepresentable {
 
 // MARK: Default Conformances
 
-extension TemplateData: TemplateDataRepresentable {
-    /// See `TemplateDataRepresentable`
-    public func convertToTemplateData() throws -> TemplateData {
-        return self
-    }
-}
-
 extension String: TemplateDataRepresentable {
     /// See `TemplateDataRepresentable`
     public func convertToTemplateData() throws -> TemplateData {

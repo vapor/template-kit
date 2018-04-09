@@ -1,6 +1,6 @@
 /// TemplateKit's supported serializable data types.
 /// - note: This is different from types supported in the AST.
-public struct TemplateData: NestedData, Equatable {
+public struct TemplateData: NestedData, Equatable, TemplateDataRepresentable {
     // MARK: Equatable
 
     /// See `Equatable`.
@@ -36,18 +36,6 @@ public struct TemplateData: NestedData, Equatable {
     /// Creates a new `TemplateData`.
     internal init(_ storage: TemplateDataStorage) {
         self.storage = storage
-    }
-
-    // MARK: Nested Data
-
-    /// Creates a new `TemplateData` from an array.
-    public init(array: [TemplateData]) {
-        storage = .array(array)
-    }
-
-    /// Creates a new `TemplateData` from a dictionary.
-    public init(dictionary: [String: TemplateData]) {
-        storage = .dictionary(dictionary)
     }
 
     // MARK: Static
@@ -99,26 +87,6 @@ public struct TemplateData: NestedData, Equatable {
 
     // MARK: Fuzzy
 
-    /// Attempts to convert to `String` or returns `nil`.
-    public var string: String? {
-        switch storage {
-        case .bool(let bool):
-            return bool.description
-        case .double(let double):
-            return double.description
-        case .int(let int):
-            return int.description
-        case .string(let s):
-            return s
-        case .data(let d):
-            return String(data: d, encoding: .utf8)
-        case .lazy(let lazy):
-            return lazy().string
-        default:
-            return nil
-        }
-    }
-
     /// Attempts to convert to `Bool` or returns `nil`.
     public var bool: Bool? {
         switch storage {
@@ -151,6 +119,40 @@ public struct TemplateData: NestedData, Equatable {
         }
     }
 
+    /// Attempts to convert to `String` or returns `nil`.
+    public var string: String? {
+        switch storage {
+        case .bool(let bool):
+            return bool.description
+        case .double(let double):
+            return double.description
+        case .int(let int):
+            return int.description
+        case .string(let s):
+            return s
+        case .data(let d):
+            return String(data: d, encoding: .utf8)
+        case .lazy(let lazy):
+            return lazy().string
+        default:
+            return nil
+        }
+    }
+
+    /// Attempts to convert to `Int` or returns `nil`.
+    public var int: Int? {
+        switch storage {
+        case .int(let i):
+            return i
+        case .string(let s):
+            return Int(s)
+        case .lazy(let lazy):
+            return lazy().int
+        default:
+            return nil
+        }
+    }
+
     /// Attempts to convert to `Double` or returns `nil`.
     public var double: Double? {
         switch storage {
@@ -167,15 +169,33 @@ public struct TemplateData: NestedData, Equatable {
         }
     }
 
-    /// Attempts to convert to `Int` or returns `nil`.
-    public var int: Int? {
+    /// Attempts to convert to `Data` or returns `nil`.
+    public var data: Data? {
         switch storage {
-        case .int(let i):
-            return i
+        case .data(let d):
+            return d
         case .string(let s):
-            return Int(s)
+            return s.data(using: .utf8)
         case .lazy(let lazy):
-            return lazy().int
+            return lazy().data
+        case .int(let i):
+            return i.description.data(using: .utf8)
+        case .array(let arr):
+            var data = Data()
+
+            for i in arr {
+                switch i {
+                case .null: break
+                default:
+                    guard let u = i.data else {
+                        return nil
+                    }
+
+                    data += u
+                }
+            }
+
+            return data
         default:
             return nil
         }
@@ -201,43 +221,30 @@ public struct TemplateData: NestedData, Equatable {
         }
     }
 
-    /// Attempts to convert to `Data` or returns `nil`.
-    public var data: Data? {
-        switch storage {
-        case .data(let d):
-            return d
-        case .string(let s):
-            return s.data(using: .utf8)
-        case .lazy(let lazy):
-            return lazy().data
-        case .int(let i):
-            return i.description.data(using: .utf8)
-        case .array(let arr):
-            var data = Data()
-            
-            for i in arr {
-                switch i {
-                case .null: break
-                default:
-                    guard let u = i.data else {
-                        return nil
-                    }
-
-                    data += u
-                }
-            }
-
-            return data
-        default:
-            return nil
-        }
-    }
-
     /// Returns `true` if the data is `null`.
     public var isNull: Bool {
         switch storage {
         case .null: return true
         default: return false
         }
+    }
+
+    // MARK: Convertible
+
+    /// See `TemplateDataRepresentable`
+    public func convertToTemplateData() throws -> TemplateData {
+        return self
+    }
+
+    // MARK: Nested Data
+
+    /// Creates a new `TemplateData` from an array.
+    public init(array: [TemplateData]) {
+        storage = .array(array)
+    }
+
+    /// Creates a new `TemplateData` from a dictionary.
+    public init(dictionary: [String: TemplateData]) {
+        storage = .dictionary(dictionary)
     }
 }
