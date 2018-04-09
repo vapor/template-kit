@@ -2,7 +2,7 @@
 ///
 /// Every `TemplateSyntax` struct has an associated `TemplateSource`. This helps generate better
 /// debug information when something goes wrong.
-public struct TemplateSource {
+public struct TemplateSource: CustomStringConvertible {
     /// Path to the template file.
     public var file: String
 
@@ -27,6 +27,11 @@ public struct TemplateSource {
         self.line = line
         self.column = column
         self.range = range
+    }
+
+    /// See `CustomStringConvertible`.
+    public var description: String {
+        return "\(file) line: \(line) column: \(column) range: \(range)"
     }
 }
 

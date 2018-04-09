@@ -60,10 +60,9 @@ extension TemplateRenderer {
         let absolutePath = path.hasPrefix("/") ? path : relativeDirectory + path
 
         guard let data = FileManager.default.contents(atPath: absolutePath) else {
-            let error = TemplateError(
+            let error = TemplateKitError(
                 identifier: "fileNotFound",
-                reason: "No file was found at path: \(absolutePath)",
-                source: .capture()
+                reason: "No file was found at path: \(absolutePath)"
             )
             return Future.map(on: container) { throw error }
         }
@@ -83,7 +82,7 @@ extension TemplateRenderer {
 
 extension TemplateRenderer {
     /// Loads the template from the supplied path.
-    public func render(template: Data, _ context: Encodable) -> Future<View> {
+    public func render<E>(template: Data, _ context: E) -> Future<View> where E: Encodable {
         return Future.flatMap(on: container) {
             let context = try TemplateDataEncoder().encode(context)
             return self.render(template: template, context)
@@ -91,7 +90,7 @@ extension TemplateRenderer {
     }
 
     /// Loads the template from the supplied path.
-    public func render(_ path: String, _ context: Encodable) -> Future<View> {
+    public func render<E>(_ path: String, _ context: E) -> Future<View> where E: Encodable {
         return Future.flatMap(on: container) {
             let context = try TemplateDataEncoder().encode(context)
             return self.render(path, context)

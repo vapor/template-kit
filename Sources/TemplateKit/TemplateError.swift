@@ -1,42 +1,36 @@
 import Debugging
 
 /// An error converting types.
-public struct TemplateError: Debuggable {
+public struct TemplateKitError: Debuggable {
+    /// See `Debuggable`.
     public let identifier: String
+
+    /// See `Debuggable`.
     public let reason: String
+
+    /// See `Debuggable`.
     public var sourceLocation: SourceLocation?
+
+    /// See `Debuggable`.
     public var stackTrace: [String]
 
+    /// Creates a new `TemplateKitError`.
     public init(
         identifier: String,
         reason: String,
-        source: SourceLocation
+        source: TemplateSource? = nil,
+        file: String = #file,
+        function: String = #function,
+        line: UInt = #line,
+        column: UInt = #column
     ) {
         self.identifier = identifier
-        self.reason = reason
-        self.sourceLocation = source
-        self.stackTrace = TemplateError.makeStackTrace()
-    }
-
-    internal static func serialize(reason: String, template: TemplateSource, source: SourceLocation) -> TemplateError {
-        return TemplateError(
-            identifier: "serialize",
-            reason:  reason + " in " + template.makeReadable(),
-            source: source
-        )
-    }
-
-    public static func parse(reason: String, template: TemplateSource, source: SourceLocation) -> TemplateError {
-        return TemplateError(
-            identifier: "parse",
-            reason: reason + " in " + template.makeReadable(),
-            source: source
-        )
-    }
-}
-
-extension TemplateSource {
-    fileprivate func makeReadable() -> String {
-        return "\(file) line: \(line) column: \(column) range: \(range)"
+        if let ts = source {
+            self.reason = "\(reason) (\(ts))"
+        } else {
+            self.reason = reason
+        }
+        self.sourceLocation = SourceLocation(file: file, function: function, line: line, column: column, range: nil)
+        self.stackTrace = TemplateKitError.makeStackTrace()
     }
 }

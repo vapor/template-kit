@@ -1,6 +1,35 @@
 /// TemplateKit's supported serializable data types.
 /// - note: This is different from types supported in the AST.
-public enum TemplateData: NestedData {
+public enum TemplateData: NestedData, Equatable {
+    // MARK: Equatable
+
+    /// See `Equatable`.
+    public static func ==(lhs: TemplateData, rhs: TemplateData) -> Bool {
+        /// Fuzzy compare
+        if lhs.string != nil && lhs.string == rhs.string {
+            return true
+        } else if lhs.int != nil && lhs.int == rhs.int {
+            return true
+        } else if lhs.double != nil && lhs.double == rhs.double {
+            return true
+        } else if lhs.bool != nil && lhs.bool == rhs.bool {
+            return true
+        }
+
+        /// Strict compare
+        switch (lhs, rhs) {
+        case (.array(let a), .array(let b)): return a == b
+        case (.dictionary(let a), .dictionary(let b)): return a == b
+        case (.bool(let a), .bool(let b)): return a == b
+        case (.string(let a), .string(let b)): return a == b
+        case (.int(let a), .int(let b)): return a == b
+        case (.double(let a), .double(let b)): return a == b
+        case (.data(let a), .data(let b)): return a == b
+        case (.null, .null): return true
+        default: return false
+        }
+    }
+
     // MARK: Cases
 
     /// A `Bool`.
@@ -48,19 +77,21 @@ public enum TemplateData: NestedData {
     /// Null.
     case null
 
-    // MARK: Init
+    // MARK: NestedData
 
-    public init(dictionary: [String : TemplateData]) {
+    /// See `NestedData`.
+    public init(dictionary: [String: TemplateData]) {
         self = .dictionary(dictionary)
     }
 
+    /// See `NestedData`.
     public init(array: [TemplateData]) {
         self = .array(array)
     }
 
-    // MARK: Polymorphic
+    // MARK: Fuzzy
 
-    /// Attempts to convert to string or returns nil.
+    /// Attempts to convert to `String` or returns `nil`.
     public var string: String? {
         switch self {
         case .bool(let bool):
@@ -80,7 +111,7 @@ public enum TemplateData: NestedData {
         }
     }
 
-    /// Attempts to convert to bool or returns nil.
+    /// Attempts to convert to `Bool` or returns `nil`.
     public var bool: Bool? {
         switch self {
         case .int(let i):
@@ -112,7 +143,7 @@ public enum TemplateData: NestedData {
         }
     }
 
-    /// Attempts to convert to double or returns nil.
+    /// Attempts to convert to `Double` or returns `nil`.
     public var double: Double? {
         switch self {
         case .int(let i):
@@ -128,7 +159,7 @@ public enum TemplateData: NestedData {
         }
     }
 
-    /// Attempts to convert to int or returns nil.
+    /// Attempts to convert to `Int` or returns `nil`.
     public var int: Int? {
         switch self {
         case .int(let i):
@@ -142,7 +173,7 @@ public enum TemplateData: NestedData {
         }
     }
 
-    /// Returns dictionary if context contains one.
+    /// Attempts to convert to `[String: TemplateData]` or returns `nil`.
     public var dictionary: [String: TemplateData]? {
         switch self {
         case .dictionary(let d):
@@ -152,7 +183,7 @@ public enum TemplateData: NestedData {
         }
     }
 
-    /// Returns array if context contains one.
+    /// Attempts to convert to `[TemplateData]` or returns `nil`.
     public var array: [TemplateData]? {
         switch self {
         case .array(let a):
@@ -162,7 +193,7 @@ public enum TemplateData: NestedData {
         }
     }
 
-    /// Attempts to convert context to data or returns nil.
+    /// Attempts to convert to `Data` or returns `nil`.
     public var data: Data? {
         switch self {
         case .data(let d):
@@ -194,7 +225,7 @@ public enum TemplateData: NestedData {
         }
     }
 
-    /// Returns true if the data is null.
+    /// Returns `true` if the data is `null`.
     public var isNull: Bool {
         switch self {
         case .null: return true
@@ -202,9 +233,16 @@ public enum TemplateData: NestedData {
         }
     }
 
-    // MARK: Get
+    // MARK: Fetch
 
-    // Fetches data from that context at the supplied coding key.
+    /// Fetches nested data asynchronously at the supplied `CodingKey` path.
+    /// - note: This method is async because `TemplateData` may contain futures.
+    ///
+    /// - parameters:
+    ///     - path: `CodingKey` path to fetch the data from.
+    ///     - worker: `Worker` to use for generating a `Promise`.
+    /// - returns: `Future<TemplateData>` containing the requested data or `null` if it
+    ///            could not be found.
     public func asyncGet(at path: [CodingKey], on worker: Worker) -> Future<TemplateData> {
         var promise = worker.eventLoop.newPromise(TemplateData.self)
 
@@ -255,35 +293,5 @@ public enum TemplateData: NestedData {
         }
 
         return promise.futureResult
-    }
-}
-
-// MARK: Equatable
-
-extension TemplateData: Equatable {
-    public static func ==(lhs: TemplateData, rhs: TemplateData) -> Bool {
-        /// Fuzzy compare
-        if lhs.string != nil && lhs.string == rhs.string {
-            return true
-        } else if lhs.int != nil && lhs.int == rhs.int {
-            return true
-        } else if lhs.double != nil && lhs.double == rhs.double {
-            return true
-        } else if lhs.bool != nil && lhs.bool == rhs.bool {
-            return true
-        }
-
-        /// Strict compare
-        switch (lhs, rhs) {
-        case (.array(let a), .array(let b)): return a == b
-        case (.dictionary(let a), .dictionary(let b)): return a == b
-        case (.bool(let a), .bool(let b)): return a == b
-        case (.string(let a), .string(let b)): return a == b
-        case (.int(let a), .int(let b)): return a == b
-        case (.double(let a), .double(let b)): return a == b
-        case (.data(let a), .data(let b)): return a == b
-        case (.null, .null): return true
-        default: return false
-        }
     }
 }
