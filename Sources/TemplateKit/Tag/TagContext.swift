@@ -1,31 +1,28 @@
-import Async
-import Dispatch
-import Service
-
-/// Represents a tag that has been parsed.
+/// Contains contextual information corresponding to a `TemplateTag` in the AST.
+/// This information will be passed to the `TagRenderer` for the identified tag.
 public struct TagContext {
-    /// Name used for this tag.
+    /// Name used for this tag as registered to the `TemplateRenderer`.
     public let name: String
 
-    /// Resolved parameters to this tag.
+    /// Resolved input parameters to this tag.
     public let parameters: [TemplateData]
 
-    /// Optional tag body
+    /// Optional tag body.
     public let body: [TemplateSyntax]?
 
-    /// TemplateSource code location of this parsed tag
+    /// `TemplateSource` code location of this parsed tag
     public let source: TemplateSource
 
-    /// Queue to complete futures on.
+    /// Current `Container`, use this as a `Worker` or to create services.
     public let container: Container
 
-    /// The template data context
+    /// Use this `TemplateDataContext` to access to current `TemplateData`.
     public let context: TemplateDataContext
 
-    /// The serializer that created this context
+    /// The `TemplateSerializer`. that created this context.
     public let serializer: TemplateSerializer
 
-    /// Creates a new parsed tag struct.
+    /// Creates a new `TagContext`.
     init(
         name: String,
         parameters: [TemplateData],
@@ -43,25 +40,27 @@ public struct TagContext {
         self.serializer = serializer
         self.container = container
     }
-}
 
-
-extension TagContext {
-    /// Create a general tag error.
-    public func error(reason: String) -> TemplateTagError {
+    /// Create a general `TemplateTagError` with metadata such as the `TemplateSource`.
+    ///
+    /// - parameters:
+    ///     - reason: Human-readable information about why the error happened.
+    public func error(reason: String) -> TemplateKitError {
         return .init(
-            tag: name,
-            source: source,
-            reason: reason
+            identifier: "tag:\(name)",
+            reason: reason,
+            source: source
         )
     }
 
+    /// Throws an error if the parameter count does not equal the supplied number `n`.
     public func requireParameterCount(_ n: Int) throws {
         guard parameters.count == n else {
             throw error(reason: "Invalid parameter count: \(parameters.count)/\(n)")
         }
     }
 
+    /// Throws an error if this tag does not include a body.
     public func requireBody() throws -> [TemplateSyntax] {
         guard let body = body else {
             throw error(reason: "Missing body")
@@ -70,17 +69,10 @@ extension TagContext {
         return body
     }
 
+    /// Throws an error if this tag includes a body.
     public func requireNoBody() throws {
         guard body == nil else {
             throw error(reason: "Extraneous body")
         }
     }
 }
-
-public struct TemplateTagError: Error {
-    public let tag: String
-    public let source: TemplateSource
-    public let reason: String
-}
-
-
