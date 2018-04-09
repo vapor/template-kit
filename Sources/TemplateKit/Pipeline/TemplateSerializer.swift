@@ -26,20 +26,18 @@ public final class TemplateSerializer {
     public func serialize(ast: [TemplateSyntax]) -> Future<View> {
         return Future<TemplateData>.flatMap(on: container) {
             return try self.render(ast: ast)
-        }.flatMap(to: Data.self) { context in
+        }.map(to: Data.self) { context in
             if case .null = context {
-                return Future.map(on: self.container) { Data() }
+                return .init()
             }
 
-            return context.resolveFutures(on: self.container).map(to: Data.self) { context in
-                guard let data = context.data else {
-                    throw TemplateKitError(
-                        identifier: "serialize",
-                        reason: "Unable to convert tag return type to Data: \(context)"
-                    )
-                }
-                return data
+            guard let data = context.data else {
+                throw TemplateKitError(
+                    identifier: "serialize",
+                    reason: "Unable to convert tag return type to Data: \(context)"
+                )
             }
+            return data
         }.map(to: View.self) { data in
             return View(data: data)
         }
@@ -68,7 +66,7 @@ public final class TemplateSerializer {
 
         return try tag.parameters.map { parameter in
             return try self.render(syntax: parameter)
-        }.map(to: TemplateData.self, on: container) { inputs in
+        }.flatMap(to: TemplateData.self, on: container) { inputs in
             let tagContext = TagContext(
                 name: tag.name,
                 parameters: inputs,
@@ -236,7 +234,9 @@ public final class TemplateSerializer {
                     source: syntax.source
                 )
             }
-        case .identifier(let id): return context.data.asyncGet(at: id.path, on: container)
+        case .identifier(let id):
+            let data = context.data.get(at: id.path) ?? .null
+            return Future.map(on: container) { data }
         case .tag(let tag): return try render(tag: tag, source: syntax.source)
         case .raw(let raw): return Future.map(on: container) { .data(raw.data) }
         case .conditional(let cond): return try render(conditional: cond, source: syntax.source)

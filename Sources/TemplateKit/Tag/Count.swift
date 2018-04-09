@@ -8,16 +8,20 @@ public final class Count: TagRenderer {
     init() {}
 
     /// See `TagRenderer`.
-    public func render(tag parsed: TagContext) throws -> TemplateData {
+    public func render(tag: TagContext) throws -> Future<TemplateData> {
         /// Require 1 parameter.
-        try parsed.requireParameterCount(1)
+        try tag.requireParameterCount(1)
+
+        let res: TemplateData
 
         /// Switch on the first param.
-        switch parsed.parameters[0] {
-        case .dictionary(let dict): return .int(dict.values.count)
-        case .array(let arr): return .int(arr.count)
-        default: return .null
+        switch tag.parameters[0] {
+        case .dictionary(let dict): res = .int(dict.values.count)
+        case .array(let arr): res = .int(arr.count)
+        default: res = .null
         }
+
+        return Future.map(on: tag) { res }
     }
 }
 

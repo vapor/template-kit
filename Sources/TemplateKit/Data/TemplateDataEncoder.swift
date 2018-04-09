@@ -4,28 +4,97 @@ public final class TemplateDataEncoder {
     public init() {}
 
     /// Encode an `Encodable` item to `TemplateData`.
-    public func encode<E>(_ encodable: E) throws -> TemplateData where E: Encodable {
-        return try _encode(encodable)
-    }
-
-    /// Non-generic method.
-    internal func _encode(_ encodable: Encodable) throws -> TemplateData {
-        let encoder = _TemplateDataEncoder()
+    public func encode<E>(_ encodable: E, on worker: Worker) throws -> Future<TemplateData> where E: Encodable {
+        let encoder = _TemplateDataEncoder(context: .init(data: .dictionary([:]), on: worker))
         try encodable.encode(to: encoder)
-        return encoder.context.data
+        return encoder.context.data.resolve(on: worker)
     }
 }
 
 /// MARK: Private
 
+/// A reference wrapper around `TemplateData`.
+fileprivate final class PartialTemplateDataContext {
+    /// The referenced `TemplateData`
+    public var data: PartialTemplateData
+
+    let eventLoop: EventLoop
+
+    /// Create a new `TemplateDataContext`.
+    public init(data: PartialTemplateData, on worker: Worker) {
+        self.data = data
+        self.eventLoop = worker.eventLoop
+    }
+}
+
+/// Holds partially evaluated template data. This may still contain futures
+/// that need to be resolved.
+fileprivate enum PartialTemplateData: NestedData {
+    case data(TemplateData)
+    case future(Future<TemplateData>)
+    case array([PartialTemplateData])
+    case dictionary([String: PartialTemplateData])
+
+    func resolve(on worker: Worker) -> Future<TemplateData> {
+        switch self {
+        case .data(let data): return Future.map(on: worker) { data }
+        case .future(let fut): return fut
+        case .array(let arr):
+            return arr.map { $0.resolve(on: worker) }
+                .flatten(on: worker)
+                .map(to: TemplateData.self) { return .array($0) }
+        case .dictionary(let dict):
+            return dict.map { (key, val) in
+                return val.resolve(on: worker).map(to: (String, TemplateData).self) { val in
+                    return (key, val)
+                }
+            }.flatten(on: worker).map(to: TemplateData.self) { arr in
+                var dict: [String: TemplateData] = [:]
+                for (key, val) in arr {
+                    dict[key] = val
+                }
+                return .dictionary(dict)
+            }
+        }
+    }
+
+    // MARK: NestedData
+
+    /// See `NestedData`.
+    public init(dictionary: [String: PartialTemplateData]) {
+        self = .dictionary(dictionary)
+    }
+
+    /// See `NestedData`.
+    public init(array: [PartialTemplateData]) {
+        self = .array(array)
+    }
+
+    /// See `NestedData`.
+    public var dictionary: [String: PartialTemplateData]? {
+        switch self {
+        case .dictionary(let d): return d
+        default: return nil
+        }
+    }
+
+    /// See `NestedData`.
+    public var array: [PartialTemplateData]? {
+        switch self {
+        case .array(let a): return a
+        default: return nil
+        }
+    }
+}
+
 fileprivate final class _TemplateDataEncoder: Encoder, FutureEncoder {
     var codingPath: [CodingKey]
-    var context: TemplateDataContext
+    var context: PartialTemplateDataContext
     var userInfo: [CodingUserInfoKey: Any] {
         return [:]
     }
 
-    init(context: TemplateDataContext = .init(data: .dictionary([:])), codingPath: [CodingKey] = []) {
+    init(context: PartialTemplateDataContext, codingPath: [CodingKey] = []) {
         self.context = context
         self.codingPath = codingPath
     }
@@ -44,28 +113,31 @@ fileprivate final class _TemplateDataEncoder: Encoder, FutureEncoder {
     }
 
     func encodeFuture<E>(_ future: EventLoopFuture<E>) throws where E : Encodable {
-        try context.data.set(to: future.convertToTemplateData(), at: codingPath)
+        let future = future.flatMap(to: TemplateData.self) { encodable in
+            return try TemplateDataEncoder().encode(encodable, on: self.context.eventLoop)
+        }
+        context.data.set(to: .future(future), at: codingPath)
     }
 }
 
 fileprivate final class _TemplateDataSingleValueEncoder: SingleValueEncodingContainer {
     var codingPath: [CodingKey]
-    var context: TemplateDataContext
+    var context: PartialTemplateDataContext
 
-    init(codingPath: [CodingKey], context: TemplateDataContext) {
+    init(codingPath: [CodingKey], context: PartialTemplateDataContext) {
         self.codingPath = codingPath
         self.context = context
     }
 
     func encodeNil() throws {
-        context.data.set(to: .null, at: codingPath)
+        context.data.set(to: .data(.null), at: codingPath)
     }
 
     func encode<T>(_ value: T) throws where T: Encodable {
         guard let data = value as? TemplateDataRepresentable else {
             throw TemplateKitError(identifier: "templateData", reason: "`\(T.self)` does not conform to `TemplateDataRepresentable`.")
         }
-        try context.data.set(to: data.convertToTemplateData(), at: codingPath)
+        try context.data.set(to: .data(data.convertToTemplateData()), at: codingPath)
     }
 }
 
@@ -73,9 +145,9 @@ fileprivate final class _TemplateDataKeyedEncoder<K>: KeyedEncodingContainerProt
     typealias Key = K
 
     var codingPath: [CodingKey]
-    var context: TemplateDataContext
+    var context: PartialTemplateDataContext
 
-    init(codingPath: [CodingKey], context: TemplateDataContext) {
+    init(codingPath: [CodingKey], context: PartialTemplateDataContext) {
         self.codingPath = codingPath
         self.context = context
     }
@@ -85,7 +157,7 @@ fileprivate final class _TemplateDataKeyedEncoder<K>: KeyedEncodingContainerProt
     }
 
     func encodeNil(forKey key: K) throws {
-        context.data.set(to: .null, at: codingPath + [key])
+        context.data.set(to: .data(.null), at: codingPath + [key])
     }
 
     func nestedContainer<NestedKey>(keyedBy keyType: NestedKey.Type, forKey key: K) -> KeyedEncodingContainer<NestedKey>
@@ -113,14 +185,14 @@ fileprivate final class _TemplateDataKeyedEncoder<K>: KeyedEncodingContainerProt
 fileprivate final class _TemplateDataUnkeyedEncoder: UnkeyedEncodingContainer {
     var count: Int
     var codingPath: [CodingKey]
-    var context: TemplateDataContext
+    var context: PartialTemplateDataContext
 
     var index: CodingKey {
         defer { count += 1 }
         return BasicKey(count)
     }
 
-    init(codingPath: [CodingKey], context: TemplateDataContext) {
+    init(codingPath: [CodingKey], context: PartialTemplateDataContext) {
         self.codingPath = codingPath
         self.context = context
         self.count = 0
@@ -128,7 +200,7 @@ fileprivate final class _TemplateDataUnkeyedEncoder: UnkeyedEncodingContainer {
     }
 
     func encodeNil() throws {
-        context.data.set(to: .null, at: codingPath + [index])
+        context.data.set(to: .data(.null), at: codingPath + [index])
     }
 
     func nestedContainer<NestedKey>(keyedBy keyType: NestedKey.Type) -> KeyedEncodingContainer<NestedKey>

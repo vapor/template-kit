@@ -7,17 +7,21 @@ public final class Contains: TagRenderer {
     public init() {}
 
     /// See `TagRenderer`.
-    public func render(tag parsed: TagContext) throws -> TemplateData {
+    public func render(tag: TagContext) throws -> Future<TemplateData> {
         /// Require two parameters.
-        try parsed.requireParameterCount(2)
+        try tag.requireParameterCount(2)
+
+        let res: TemplateData
 
         /// Convert first param to an array or return false.
-        guard let array = parsed.parameters[0].array  else {
-            return .bool(false)
+        if let array = tag.parameters[0].array {
+            /// Return `true` if the array contains the item.
+            let compare = tag.parameters[1]
+            res = .bool(array.contains(compare))
+        } else {
+            res = .bool(false)
         }
 
-        /// Return `true` if the array contains the item.
-        let compare = parsed.parameters[1]
-        return .bool(array.contains(compare))
+        return Future.map(on: tag) { res }
     }
 }

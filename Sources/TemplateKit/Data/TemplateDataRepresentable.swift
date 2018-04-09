@@ -58,25 +58,6 @@ extension OptionalType {
     }
 }
 
-extension Future: TemplateDataRepresentable {
-    /// See `TemplateDataRepresentable`
-    public func convertToTemplateData() throws -> TemplateData {
-        let data = self.map(to: TemplateData.self) { val in
-            if let data = val as? TemplateDataRepresentable {
-                return try data.convertToTemplateData()
-            } else if let codable = val as? Encodable {
-                return try TemplateDataEncoder()._encode(codable)
-            } else {
-                throw TemplateKitError(
-                    identifier: "convertFuture",
-                    reason: "Future type `\(T.self)` is not `TemplateDataRepresentable`"
-                )
-            }
-        }
-        return .future(data)
-    }
-}
-
 extension Optional: TemplateDataRepresentable { }
 
 extension Bool: TemplateDataRepresentable {

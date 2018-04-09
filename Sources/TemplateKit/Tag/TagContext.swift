@@ -1,6 +1,6 @@
 /// Contains contextual information corresponding to a `TemplateTag` in the AST.
 /// This information will be passed to the `TagRenderer` for the identified tag.
-public struct TagContext {
+public final class TagContext: BasicWorker {
     /// Name used for this tag as registered to the `TemplateRenderer`.
     public let name: String
 
@@ -22,8 +22,13 @@ public struct TagContext {
     /// The `TemplateSerializer`. that created this context.
     public let serializer: TemplateSerializer
 
+    /// See `BasicWorker`.
+    public var eventLoop: EventLoop {
+        return container.eventLoop
+    }
+
     /// Creates a new `TagContext`.
-    init(
+    public init(
         name: String,
         parameters: [TemplateData],
         body: [TemplateSyntax]?,

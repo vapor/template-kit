@@ -7,9 +7,9 @@ public final class Uppercase: TagRenderer {
     public init() {}
 
     /// See `TagRenderer`.
-    public func render(tag parsed: TagContext) throws -> TemplateData {
-        try parsed.requireParameterCount(1)
-        let string = parsed.parameters[0].string?.uppercased() ?? ""
-        return .string(string)
+    public func render(tag: TagContext) throws -> Future<TemplateData> {
+        try tag.requireParameterCount(1)
+        let string = tag.parameters[0].string?.uppercased() ?? ""
+        return Future.map(on: tag) { .string(string) }
     }
 }

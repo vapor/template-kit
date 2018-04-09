@@ -8,20 +8,20 @@ public final class DateFormat: TagRenderer {
     public init() {}
 
     /// See `TagRenderer`.
-    public func render(tag parsed: TagContext) throws -> TemplateData {
+    public func render(tag: TagContext) throws -> Future<TemplateData> {
         /// Require at least one parameter.
-        switch parsed.parameters.count {
+        switch tag.parameters.count {
         case 1, 2: break
-        default: throw parsed.error(reason: "Invalid parameter count: \(parsed.parameters.count). 1 or 2 required.")
+        default: throw tag.error(reason: "Invalid parameter count: \(tag.parameters.count). 1 or 2 required.")
         }
 
         let formatter = DateFormatter()
         /// Assume the date is a floating point number
-        let date = Date(timeIntervalSinceReferenceDate: parsed.parameters[0].double ?? 0)
+        let date = Date(timeIntervalSinceReferenceDate: tag.parameters[0].double ?? 0)
         /// Set format as the second param or default to ISO-8601 format.
-        formatter.dateFormat = parsed.parameters[1].string ?? "yyyy-MM-dd HH:mm:ss"
+        formatter.dateFormat = tag.parameters[1].string ?? "yyyy-MM-dd HH:mm:ss"
 
         /// Return formatted date
-        return .string(formatter.string(from: date))
+        return Future.map(on: tag) { .string(formatter.string(from: date)) }
     }
 }

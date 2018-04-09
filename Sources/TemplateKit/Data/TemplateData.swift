@@ -68,25 +68,22 @@ public enum TemplateData: NestedData, Equatable {
     /// A nestable `[TemplateData]` array.
     case array([TemplateData])
 
-    /// A `Future` value.
-    case future(Future<TemplateData>)
-
     // A lazily-resolvable `TemplateData`.
     case lazy(() -> (TemplateData))
 
     /// Null.
     case null
 
-    // MARK: NestedData
-
-    /// See `NestedData`.
-    public init(dictionary: [String: TemplateData]) {
-        self = .dictionary(dictionary)
-    }
+    // MARK: Nested Data
 
     /// See `NestedData`.
     public init(array: [TemplateData]) {
         self = .array(array)
+    }
+
+    /// See `NestedData`.
+    public init(dictionary: [String: TemplateData]) {
+        self = .dictionary(dictionary)
     }
 
     // MARK: Fuzzy
@@ -231,93 +228,5 @@ public enum TemplateData: NestedData, Equatable {
         case .null: return true
         default: return false
         }
-    }
-
-    // MARK: Fetch
-
-    /// Asynchronously converts this `TemplateData` to `Data`, waiting for any nested futures to complete.
-    public func resolveFutures(on worker: Worker) -> Future<TemplateData> {
-        switch self {
-        case .future(let future): return future.map { $0 }
-        case .lazy(let lazy): return lazy().resolveFutures(on: worker)
-        case .array(let arr):
-            return arr.map { $0.resolveFutures(on: worker) }.flatten(on: worker).map(to: TemplateData.self) { datas in
-                return .array(datas)
-            }
-        case .dictionary(let dict):
-            let arr = dict.map { (key, val) in
-                return val.resolveFutures(on: worker).map(to: (String, TemplateData).self) { val in
-                    return (key, val)
-                }
-            }
-            return arr.flatten(on: worker).map(to: TemplateData.self) { arr in
-                var dict: [String: TemplateData] = [:]
-                for (key, val) in arr {
-                    dict[key] = val
-                }
-                return .dictionary(dict)
-            }
-        default: return Future.map(on: worker) { self }
-        }
-    }
-
-    /// Fetches nested data asynchronously at the supplied `CodingKey` path.
-    /// - note: This method is async because `TemplateData` may contain futures.
-    ///
-    /// - parameters:
-    ///     - path: `CodingKey` path to fetch the data from.
-    ///     - worker: `Worker` to use for generating a `Promise`.
-    /// - returns: `Future<TemplateData>` containing the requested data or `null` if it
-    ///            could not be found.
-    public func asyncGet(at path: [CodingKey], on worker: Worker) -> Future<TemplateData> {
-        var promise = worker.eventLoop.newPromise(TemplateData.self)
-
-        var current = self
-        var iterator = path.makeIterator()
-
-        func handle(_ path: CodingKey) {
-            switch current {
-            case .array(let arr):
-                if let index = path.intValue, arr.count > index {
-                    let value = arr[index]
-                    current = value
-                    if let next = iterator.next() {
-                        handle(next)
-                    } else {
-                        promise.succeed(result: current)
-                    }
-                } else {
-                    promise.succeed(result: .null)
-                }
-            case .dictionary(let dict):
-                if let value = dict[ path.stringValue] {
-                    current = value
-                    if let next = iterator.next() {
-                        handle(next)
-                    } else {
-                        promise.succeed(result: current)
-                    }
-                } else {
-                    promise.succeed(result: .null)
-                }
-            case .future(let fut):
-                fut.do { value in
-                    current = value
-                    handle(path)
-                }.catch { error in
-                    promise.fail(error: error)
-                }
-            default:
-                promise.succeed(result: .null)
-            }
-        }
-
-        if let first = iterator.next() {
-            handle(first)
-        } else {
-            promise.succeed(result: current)
-        }
-
-        return promise.futureResult
     }
 }

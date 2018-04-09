@@ -103,8 +103,9 @@ extension TemplateRenderer {
     /// - returns: `Future` containing the rendered `View`.
     public func render<E>(template: Data, _ context: E) -> Future<View> where E: Encodable {
         return Future.flatMap(on: container) {
-            let context = try TemplateDataEncoder().encode(context)
-            return self.render(template: template, context)
+            return try TemplateDataEncoder().encode(context, on: self.container).flatMap(to: View.self) { context in
+                return self.render(template: template, context)
+            }
         }
     }
 
@@ -116,8 +117,9 @@ extension TemplateRenderer {
     /// - returns: `Future` containing the rendered `View`.
     public func render<E>(_ path: String, _ context: E) -> Future<View> where E: Encodable {
         return Future.flatMap(on: container) {
-            let context = try TemplateDataEncoder().encode(context)
-            return self.render(path, context)
+            return try TemplateDataEncoder().encode(context, on: self.container).flatMap(to: View.self) { context in
+                return self.render(path, context)
+            }
         }
     }
 }
