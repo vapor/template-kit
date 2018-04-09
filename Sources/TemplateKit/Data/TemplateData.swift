@@ -235,14 +235,20 @@ public enum TemplateData: NestedData, Equatable {
 
     // MARK: Fetch
 
-    /// Asynchronously converts this `TemplateData` to `Data`, waiting for all nested futures to complete.
+    /// Asynchronously converts this `TemplateData` to `Data`, waiting for any nested futures to complete.
     public func asyncData(on worker: Worker) -> Future<Data?> {
         switch self {
-        case .future(let future):
-            return future.map { $0.data }
+        case .future(let future): return future.map { $0.data }
+        case .data(let d): return Future.map(on: worker) { d }
+        case .string(let s): return Future.map(on: worker) { s.data(using: .utf8) }
+        case .lazy(let lazy): return lazy().asyncData(on: worker)
+        case .int(let i): return Future.map(on: worker) { i.description.data(using: .utf8) }
+        case .array(let arr):
+            return arr.map { $0.asyncData(on: worker) }.flatten(on: worker).map(to: Data?.self) { datas in
+                return .init(datas.compactMap({ $0 }).joined())
+            }
         default:
-            let d = self.data
-            return Future.map(on: worker) { d }
+            return Future.map(on: worker) { nil }
         }
     }
 
