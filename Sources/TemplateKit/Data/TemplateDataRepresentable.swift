@@ -64,6 +64,8 @@ extension Future: TemplateDataRepresentable {
         let data = self.map(to: TemplateData.self) { val in
             if let data = val as? TemplateDataRepresentable {
                 return try data.convertToTemplateData()
+            } else if let codable = val as? Encodable {
+                return try TemplateDataEncoder()._encode(codable)
             } else {
                 throw TemplateKitError(
                     identifier: "convertFuture",

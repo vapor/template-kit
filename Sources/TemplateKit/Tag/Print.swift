@@ -14,4 +14,3 @@ public final class Print: TagRenderer {
         return .string(string.htmlEscaped())
     }
 }
-

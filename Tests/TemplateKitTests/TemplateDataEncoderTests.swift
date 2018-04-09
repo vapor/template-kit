@@ -110,6 +110,61 @@ class TemplateDataEncoderTests: XCTestCase {
         ]))
     }
 
+    func testGH10() throws {
+        func wrap(_ syntax: TemplateSyntaxType) -> TemplateSyntax {
+            return TemplateSyntax(type: syntax, source: TemplateSource(file: "test", line: 0, column: 0, range: 0..<1))
+        }
+        func raw(_ string: String) -> TemplateSyntax {
+            let data = string.data(using: .utf8) ?? .init()
+            return wrap(.raw(TemplateRaw(data: data)))
+        }
+
+        let path: [CodingKey] = [
+            BasicKey.init("currentUser"),
+            BasicKey.init("name"),
+        ]
+
+        let ast: [TemplateSyntax] = [
+            raw("""
+            head
+            """),
+            wrap(.tag(TemplateTag(
+                name: "print",
+                parameters: [wrap(.identifier(TemplateIdentifier(path: path)))],
+                body: nil
+            ))),
+            raw("""
+            tail
+            """),
+        ]
+        let worker = EmbeddedEventLoop()
+
+        struct User: Codable {
+            var id: Int?
+            var name: String
+        }
+
+        struct Profile: Encodable {
+            var currentUser: Future<User>
+        }
+
+        let user = User(id: nil, name: "Vapor")
+        let profile = Profile(currentUser: Future.map(on: worker) { user })
+
+        let data = try TemplateDataEncoder().encode(profile)
+        let container = BasicContainer(config: .init(), environment: .testing, services: .init(), on: worker)
+
+        let renderer = PlaintextRenderer(viewsDir: "/", on: container)
+        renderer.tags["print"] = Print()
+
+        let view = try TemplateSerializer(
+            renderer: renderer,
+            context: TemplateDataContext(data: data),
+            using: container
+        ).serialize(ast: ast).wait()
+        XCTAssertEqual(String(data: view.data, encoding: .utf8), "headVaportail")
+    }
+
     static var allTests = [
         ("testString", testString),
         ("testDouble", testDouble),
@@ -119,5 +174,6 @@ class TemplateDataEncoderTests: XCTestCase {
         ("testEncodable", testEncodable),
         ("testComplexEncodable", testComplexEncodable),
         ("testNestedEncodable", testNestedEncodable),
+        ("testGH10", testGH10),
     ]
 }

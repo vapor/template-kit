@@ -5,6 +5,11 @@ public final class TemplateDataEncoder {
 
     /// Encode an `Encodable` item to `TemplateData`.
     public func encode<E>(_ encodable: E) throws -> TemplateData where E: Encodable {
+        return try _encode(encodable)
+    }
+
+    /// Non-generic method.
+    internal func _encode(_ encodable: Encodable) throws -> TemplateData {
         let encoder = _TemplateDataEncoder()
         try encodable.encode(to: encoder)
         return encoder.context.data
@@ -13,7 +18,7 @@ public final class TemplateDataEncoder {
 
 /// MARK: Private
 
-fileprivate final class _TemplateDataEncoder: Encoder {
+fileprivate final class _TemplateDataEncoder: Encoder, FutureEncoder {
     var codingPath: [CodingKey]
     var context: TemplateDataContext
     var userInfo: [CodingUserInfoKey: Any] {
@@ -36,6 +41,10 @@ fileprivate final class _TemplateDataEncoder: Encoder {
 
     func singleValueContainer() -> SingleValueEncodingContainer {
         return _TemplateDataSingleValueEncoder(codingPath: codingPath, context: context)
+    }
+
+    func encodeFuture<E>(_ future: EventLoopFuture<E>) throws where E : Encodable {
+        try context.data.set(to: future.convertToTemplateData(), at: codingPath)
     }
 }
 

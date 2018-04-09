@@ -31,8 +31,8 @@ public final class TemplateSerializer {
                 return Future.map(on: self.container) { Data() }
             }
 
-            return context.asyncData(on: self.container).map(to: Data.self) { data in
-                guard let data = data else {
+            return context.resolveFutures(on: self.container).map(to: Data.self) { context in
+                guard let data = context.data else {
                     throw TemplateKitError(
                         identifier: "serialize",
                         reason: "Unable to convert tag return type to Data: \(context)"
