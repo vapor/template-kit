@@ -3,10 +3,18 @@
 
 // FIXME: move to core
 
+/// A data structure containing arbitrarily nested arrays and dictionaries.
 public protocol NestedData {
+    /// Returns a dictionary representation of `self`, or `nil` if not possible.
     var dictionary: [String: Self]? { get }
+
+    /// Returns an array representation of self, or `nil` if not possible.
     var array: [Self]? { get }
+
+    /// Creates `self` from a dictionary representation.
     init(dictionary: [String: Self])
+
+    /// Creates `self` from an array representation.
     init(array: [Self])
 }
 

@@ -152,6 +152,7 @@ class TemplateDataEncoderTests: XCTestCase {
         let profile = Profile(currentUser: Future.map(on: worker) { user })
 
         let data = try TemplateDataEncoder().testEncode(profile)
+        print(data)
         let container = BasicContainer(config: .init(), environment: .testing, services: .init(), on: worker)
 
         let renderer = PlaintextRenderer(viewsDir: "/", on: container)

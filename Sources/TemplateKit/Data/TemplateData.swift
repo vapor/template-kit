@@ -68,7 +68,7 @@ public enum TemplateData: NestedData, Equatable {
     /// A nestable `[TemplateData]` array.
     case array([TemplateData])
 
-    // A lazily-resolvable `TemplateData`.
+    /// A lazily-resolvable `TemplateData`.
     case lazy(() -> (TemplateData))
 
     /// Null.

@@ -1,4 +1,6 @@
-/// Capitalizes a `String`-convertible item.
+/// Capitalizes a `String`.
+///
+///     capitalize(<item>)
 public final class Capitalize: TagRenderer {
     /// Creates a new `Capitalize` tag renderer.
     public init() {}

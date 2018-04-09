@@ -1,5 +1,7 @@
 /// Capable of being encoded as `TemplateData`.
 public protocol TemplateDataRepresentable {
+    /// Converts `self` to `TemplateData` or throws an error if `self`
+    /// cannot be converted.
     func convertToTemplateData() throws -> TemplateData
 }
 
