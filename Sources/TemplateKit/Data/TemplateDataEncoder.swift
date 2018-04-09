@@ -32,18 +32,18 @@ fileprivate final class PartialTemplateDataContext {
 fileprivate enum PartialTemplateData: NestedData {
     case data(TemplateData)
     case future(Future<TemplateData>)
-    case array([PartialTemplateData])
-    case dictionary([String: PartialTemplateData])
+    case arr([PartialTemplateData])
+    case dict([String: PartialTemplateData])
 
     func resolve(on worker: Worker) -> Future<TemplateData> {
         switch self {
         case .data(let data): return Future.map(on: worker) { data }
         case .future(let fut): return fut
-        case .array(let arr):
+        case .arr(let arr):
             return arr.map { $0.resolve(on: worker) }
                 .flatten(on: worker)
                 .map(to: TemplateData.self) { return .array($0) }
-        case .dictionary(let dict):
+        case .dict(let dict):
             return dict.map { (key, val) in
                 return val.resolve(on: worker).map(to: (String, TemplateData).self) { val in
                     return (key, val)
@@ -61,27 +61,27 @@ fileprivate enum PartialTemplateData: NestedData {
     // MARK: NestedData
 
     /// See `NestedData`.
-    public init(dictionary: [String: PartialTemplateData]) {
-        self = .dictionary(dictionary)
+    static func dictionary(_ value: [String: PartialTemplateData]) -> PartialTemplateData {
+        return .dict(value)
     }
 
     /// See `NestedData`.
-    public init(array: [PartialTemplateData]) {
-        self = .array(array)
+    static func array(_ value: [PartialTemplateData]) -> PartialTemplateData {
+        return .arr(value)
     }
 
     /// See `NestedData`.
-    public var dictionary: [String: PartialTemplateData]? {
+    var dictionary: [String: PartialTemplateData]? {
         switch self {
-        case .dictionary(let d): return d
+        case .dict(let d): return d
         default: return nil
         }
     }
 
     /// See `NestedData`.
-    public var array: [PartialTemplateData]? {
+    var array: [PartialTemplateData]? {
         switch self {
-        case .array(let a): return a
+        case .arr(let a): return a
         default: return nil
         }
     }

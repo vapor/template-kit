@@ -235,16 +235,4 @@ public struct TemplateData: NestedData, Equatable, TemplateDataRepresentable {
     public func convertToTemplateData() throws -> TemplateData {
         return self
     }
-
-    // MARK: Nested Data
-
-    /// Creates a new `TemplateData` from an array.
-    public init(array: [TemplateData]) {
-        storage = .array(array)
-    }
-
-    /// Creates a new `TemplateData` from a dictionary.
-    public init(dictionary: [String: TemplateData]) {
-        storage = .dictionary(dictionary)
-    }
 }
