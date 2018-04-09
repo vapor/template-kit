@@ -10,7 +10,10 @@ public final class DateFormat: TagRenderer {
     /// See `TagRenderer`.
     public func render(tag parsed: TagContext) throws -> TemplateData {
         /// Require at least one parameter.
-        try parsed.requireParameterCount(1)
+        switch parsed.parameters.count {
+        case 1, 2: break
+        default: throw parsed.error(reason: "Invalid parameter count: \(parsed.parameters.count). 1 or 2 required.")
+        }
 
         let formatter = DateFormatter()
         /// Assume the date is a floating point number

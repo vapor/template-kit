@@ -24,19 +24,22 @@ public final class TemplateSerializer {
     ///     - ast: Collection of `TemplateSyntax` (AST) to serialize using this serializer's context and container.
     /// - returns: A `Future` `View` containing the rendered template.
     public func serialize(ast: [TemplateSyntax]) -> Future<View> {
-        return Future<TemplateData>.flatMap(on: container) { try self.render(ast: ast) }.map(to: Data.self) { context in
+        return Future<TemplateData>.flatMap(on: container) {
+            return try self.render(ast: ast)
+        }.flatMap(to: Data.self) { context in
             if case .null = context {
-                return Data()
+                return Future.map(on: self.container) { Data() }
             }
 
-            guard let data = context.data else {
-                throw TemplateKitError(
-                    identifier: "serialize",
-                    reason: "Unable to convert tag return type to Data: \(context)"
-                )
+            return context.asyncData(on: self.container).map(to: Data.self) { data in
+                guard let data = data else {
+                    throw TemplateKitError(
+                        identifier: "serialize",
+                        reason: "Unable to convert tag return type to Data: \(context)"
+                    )
+                }
+                return data
             }
-
-            return data
         }.map(to: View.self) { data in
             return View(data: data)
         }

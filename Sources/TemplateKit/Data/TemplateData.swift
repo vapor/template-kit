@@ -235,6 +235,17 @@ public enum TemplateData: NestedData, Equatable {
 
     // MARK: Fetch
 
+    /// Asynchronously converts this `TemplateData` to `Data`, waiting for all nested futures to complete.
+    public func asyncData(on worker: Worker) -> Future<Data?> {
+        switch self {
+        case .future(let future):
+            return future.map { $0.data }
+        default:
+            let d = self.data
+            return Future.map(on: worker) { d }
+        }
+    }
+
     /// Fetches nested data asynchronously at the supplied `CodingKey` path.
     /// - note: This method is async because `TemplateData` may contain futures.
     ///
