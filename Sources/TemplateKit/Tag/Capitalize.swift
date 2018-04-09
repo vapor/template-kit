@@ -1,11 +1,17 @@
-import Async
-import Foundation
-
+/// Capitalizes a `String`.
+///
+///     capitalize(<item>)
 public final class Capitalize: TagRenderer {
+    /// Creates a new `Capitalize` tag renderer.
     public init() {}
-    public func render(tag parsed: TagContext) throws -> Future<TemplateData> {
-        try parsed.requireParameterCount(1)
-        let string = parsed.parameters[0].string?.capitalized ?? ""
-        return Future.map(on: parsed.container) { .string(string) }
+
+    /// See `TagRenderer`.
+    public func render(tag: TagContext) throws -> Future<TemplateData> {
+        /// Require exactly one parameter (thing to capitalize)
+        try tag.requireParameterCount(1)
+
+        /// Convert the item to a `String` or default to `""`.
+        let string = tag.parameters[0].string?.capitalized ?? ""
+        return Future.map(on: tag) { .string(string) }
     }
 }

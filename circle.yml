@@ -25,6 +25,24 @@ jobs:
           command: swift build -c release
 
 
+  linux-leaf:
+    docker:
+      - image: codevapor/swift:4.1
+    steps:
+      - run:
+          name: Clone Leaf
+          command: git clone -b template-kit-gm https://github.com/vapor/leaf.git
+          working_directory: ~/
+      - run:
+          name: Switch Leaf to this TemplateKit revision
+          command: swift package edit TemplateKit --revision $CIRCLE_SHA1
+          working_directory: ~/leaf
+      - run:
+          name: Run Leaf unit tests
+          command: swift test
+          working_directory: ~/leaf
+
+
   linux-vapor:
     docker:
       - image: codevapor/swift:4.1
@@ -49,6 +67,7 @@ workflows:
     jobs:
       - linux
       - linux-vapor
+      - linux-leaf
       # - macos
 
   nightly:

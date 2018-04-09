@@ -1,14 +1,23 @@
-public struct TemplateSyntax {
+/// Top-level syntax type. Combines `TemplateSyntaxType` which contains the actual AST
+/// node and `TemplateSource` which contains template-source location.
+public struct TemplateSyntax: CustomStringConvertible {
+    /// The AST-node type. See `TemplateSyntaxType`.
     public let type: TemplateSyntaxType
+
+    /// Source location of this syntax expression.
     public let source: TemplateSource
 
+    /// Creates a new `TemplateSyntax`.
+    ///
+    /// - parameters:
+    ///     - type: The AST-node type. See `TemplateSyntaxType`.
+    ///     - source: Source location of this syntax expression.
     public init(type: TemplateSyntaxType, source: TemplateSource) {
         self.type = type
         self.source = source
     }
-}
 
-extension TemplateSyntax: CustomStringConvertible {
+    /// See `CustomStringConvertible`.
     public var description: String {
         switch type {
         case .raw(let source):
@@ -21,6 +30,7 @@ extension TemplateSyntax: CustomStringConvertible {
         case .embed(let embed): return "Embed: \(embed.path)"
         case .conditional(let cond): return "Conditional: \(cond))"
         case .iterator(let it): return "Iterator: \(it)"
+        case .custom: return "Custom: ()"
         }
     }
 }

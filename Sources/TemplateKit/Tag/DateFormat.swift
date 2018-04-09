@@ -1,15 +1,27 @@
-import Async
-import Foundation
-
+/// Formats a floating-point time interval since epoch date to a specified format.
+///
+///     dateFormat(<timeIntervalSinceEpoch>, <dateFormat?>)
+///
+/// If no date format is supplied, a default will be used.
 public final class DateFormat: TagRenderer {
+    /// Creates a new `DateFormat` tag renderer.
     public init() {}
-    public func render(tag parsed: TagContext) throws -> Future<TemplateData> {
-        try parsed.requireParameterCount(2)
+
+    /// See `TagRenderer`.
+    public func render(tag: TagContext) throws -> Future<TemplateData> {
+        /// Require at least one parameter.
+        switch tag.parameters.count {
+        case 1, 2: break
+        default: throw tag.error(reason: "Invalid parameter count: \(tag.parameters.count). 1 or 2 required.")
+        }
 
         let formatter = DateFormatter()
-        let date = Date(timeIntervalSinceReferenceDate: parsed.parameters[0].double ?? 0)
-        formatter.dateFormat = parsed.parameters[1].string ?? "yyyy-MM-dd HH:mm:ss"
+        /// Assume the date is a floating point number
+        let date = Date(timeIntervalSinceReferenceDate: tag.parameters[0].double ?? 0)
+        /// Set format as the second param or default to ISO-8601 format.
+        formatter.dateFormat = tag.parameters[1].string ?? "yyyy-MM-dd HH:mm:ss"
 
-        return Future.map(on: parsed.container) { .string(formatter.string(from: date)) }
+        /// Return formatted date
+        return Future.map(on: tag) { .string(formatter.string(from: date)) }
     }
 }

@@ -1,10 +1,13 @@
-import Async
-
 /// Sets data to the tag context.
+///
+///     var(<key>, <item>)
+///
+/// The second parameter can be either an item or emitted and the tag body will be used.
 public final class Var: TagRenderer {
+    /// Creates a new `Var` tag renderer.
     public init() {}
 
-    /// See TagRenderer.render
+    /// See `TagRenderer`.
     public func render(tag: TagContext) throws -> Future<TemplateData> {
         var dict = tag.context.data.dictionary ?? [:]
         switch tag.parameters.count {
@@ -25,10 +28,10 @@ public final class Var: TagRenderer {
             }
             dict[key] = tag.parameters[1]
             tag.context.data = .dictionary(dict)
-            return Future.map(on: tag.container) { .null }
+            return Future.map(on: tag) { .null }
         default:
             try tag.requireParameterCount(2)
-            return Future.map(on: tag.container) { .null }
+            return Future.map(on: tag) { .null }
         }
     }
 }

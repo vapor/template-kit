@@ -1,22 +1,27 @@
-import Async
-
+/// Returns the number of items in the supplied array.
+///
+///     count(<array>)
+///
+/// Supports counting arrays or dictionaries (keys).
 public final class Count: TagRenderer {
+    /// Creates a new `Count` tag renderer.
     init() {}
-    
-    public func render(tag parsed: TagContext) throws -> Future<TemplateData> {
-        let promise = parsed.container.eventLoop.newPromise(TemplateData.self)
-        try parsed.requireParameterCount(1)
-        
-        switch parsed.parameters[0] {
-        case .dictionary(let dict):
-            promise.succeed(result: .int(dict.values.count))
-        case .array(let arr):
-            promise.succeed(result: .int(arr.count))
-        default:
-            promise.succeed(result: .null)
+
+    /// See `TagRenderer`.
+    public func render(tag: TagContext) throws -> Future<TemplateData> {
+        /// Require 1 parameter.
+        try tag.requireParameterCount(1)
+
+        let res: TemplateData
+
+        /// Switch on the first param.
+        switch tag.parameters[0].storage {
+        case .dictionary(let dict): res = .int(dict.values.count)
+        case .array(let arr): res = .int(arr.count)
+        default: res = .null
         }
 
-        return promise.futureResult
+        return Future.map(on: tag) { res }
     }
 }
 

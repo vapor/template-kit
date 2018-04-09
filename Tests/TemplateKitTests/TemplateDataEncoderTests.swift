@@ -6,17 +6,17 @@ import XCTest
 class TemplateDataEncoderTests: XCTestCase {
     func testString() {
         let data = "hello"
-        try XCTAssertEqual(TemplateDataEncoder().encode(data), .string(data))
+        try XCTAssertEqual(TemplateDataEncoder().testEncode(data), .string(data))
     }
 
     func testDouble() {
         let data: Double = 3.14
-        try XCTAssertEqual(TemplateDataEncoder().encode(data), .double(data))
+        try XCTAssertEqual(TemplateDataEncoder().testEncode(data), .double(data))
     }
 
     func testDictionary() {
         let data: [String: String] = ["string": "hello", "foo": "3.14"]
-        try XCTAssertEqual(TemplateDataEncoder().encode(data), .dictionary([
+        try XCTAssertEqual(TemplateDataEncoder().testEncode(data), .dictionary([
             "string": .string("hello"),
             "foo": .string("3.14")
         ]))
@@ -27,7 +27,7 @@ class TemplateDataEncoderTests: XCTestCase {
             "a": ["string": "hello", "foo": "3.14"],
             "b": ["greeting": "hey", "foo": "3.15"]
         ]
-        try XCTAssertEqual(TemplateDataEncoder().encode(data), .dictionary([
+        try XCTAssertEqual(TemplateDataEncoder().testEncode(data), .dictionary([
         "a": .dictionary([
             "string": .string("hello"),
             "foo": .string("3.14")
@@ -41,21 +41,21 @@ class TemplateDataEncoderTests: XCTestCase {
 
     func testArray() {
         let data: [String] = ["string", "hello", "foo", "3.14"]
-        try XCTAssertEqual(TemplateDataEncoder().encode(data), .array([
+        try XCTAssertEqual(TemplateDataEncoder().testEncode(data), .array([
             .string("string"), .string("hello"), .string("foo"), .string("3.14")
         ]))
     }
 
     func testNestedArray() {
         let data: [[String]] = [["string"], ["hello", "foo"], ["3.14"]]
-        try XCTAssertEqual(TemplateDataEncoder().encode(data), .array([
+        try XCTAssertEqual(TemplateDataEncoder().testEncode(data), .array([
             .array([.string("string")]), .array([.string("hello"), .string("foo")]), .array([.string("3.14")])
         ]))
     }
 
     func testEncodable() {
         struct Hello: Encodable { var hello = "hello" }
-        try XCTAssertEqual(TemplateDataEncoder().encode(Hello()), .dictionary([
+        try XCTAssertEqual(TemplateDataEncoder().testEncode(Hello()), .dictionary([
             "hello": .string("hello"),
         ]))
     }
@@ -70,7 +70,7 @@ class TemplateDataEncoderTests: XCTestCase {
             var fib: [Int] = [0, 1, 1, 2, 3, 5, 8, 13]
         }
 
-        try XCTAssertEqual(TemplateDataEncoder().encode(Test()), .dictionary([
+        try XCTAssertEqual(TemplateDataEncoder().testEncode(Test()), .dictionary([
             "string": .string("hello"),
             "double": .double(3.14),
             "int": .int(42),
@@ -94,7 +94,7 @@ class TemplateDataEncoderTests: XCTestCase {
         }
 
         let sub = Test()
-        try XCTAssertEqual(TemplateDataEncoder().encode(Test(sub: sub)), .dictionary([
+        try XCTAssertEqual(TemplateDataEncoder().testEncode(Test(sub: sub)), .dictionary([
             "string": .string("hello"),
             "double": .double(3.14),
             "int": .int(42),
@@ -110,6 +110,62 @@ class TemplateDataEncoderTests: XCTestCase {
         ]))
     }
 
+    func testGH10() throws {
+        func wrap(_ syntax: TemplateSyntaxType) -> TemplateSyntax {
+            return TemplateSyntax(type: syntax, source: TemplateSource(file: "test", line: 0, column: 0, range: 0..<1))
+        }
+        func raw(_ string: String) -> TemplateSyntax {
+            let data = string.data(using: .utf8) ?? .init()
+            return wrap(.raw(TemplateRaw(data: data)))
+        }
+
+        let path: [CodingKey] = [
+            BasicKey.init("currentUser"),
+            BasicKey.init("name"),
+        ]
+
+        let ast: [TemplateSyntax] = [
+            raw("""
+            head
+            """),
+            wrap(.tag(TemplateTag(
+                name: "print",
+                parameters: [wrap(.identifier(TemplateIdentifier(path: path)))],
+                body: nil
+            ))),
+            raw("""
+            tail
+            """),
+        ]
+        let worker = EmbeddedEventLoop()
+
+        struct User: Codable {
+            var id: Int?
+            var name: String
+        }
+
+        struct Profile: Encodable {
+            var currentUser: Future<User>
+        }
+
+        let user = User(id: nil, name: "Vapor")
+        let profile = Profile(currentUser: Future.map(on: worker) { user })
+
+        let data = try TemplateDataEncoder().testEncode(profile)
+        print(data)
+        let container = BasicContainer(config: .init(), environment: .testing, services: .init(), on: worker)
+
+        let renderer = PlaintextRenderer(viewsDir: "/", on: container)
+        renderer.tags["print"] = Print()
+
+        let view = try TemplateSerializer(
+            renderer: renderer,
+            context: TemplateDataContext(data: data),
+            using: container
+        ).serialize(ast: ast).wait()
+        XCTAssertEqual(String(data: view.data, encoding: .utf8), "headVaportail")
+    }
+
     static var allTests = [
         ("testString", testString),
         ("testDouble", testDouble),
@@ -119,5 +175,12 @@ class TemplateDataEncoderTests: XCTestCase {
         ("testEncodable", testEncodable),
         ("testComplexEncodable", testComplexEncodable),
         ("testNestedEncodable", testNestedEncodable),
+        ("testGH10", testGH10),
     ]
+}
+
+extension TemplateDataEncoder {
+    func testEncode<E>(_ encodable: E) throws -> TemplateData where E: Encodable {
+        return try encode(encodable, on: EmbeddedEventLoop()).wait()
+    }
 }

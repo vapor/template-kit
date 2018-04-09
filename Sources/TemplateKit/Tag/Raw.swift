@@ -1,14 +1,16 @@
-import Async
-
+/// Prints a parameter without HTML-escaping it (be careful!).
+///
+///     raw(<item>)
+///
 public final class Raw: TagRenderer {
+    /// Creates a new `Raw` tag renderer.
     public init() { }
 
-    public func render(tag parsed: TagContext) throws -> Future<TemplateData> {
-        try parsed.requireNoBody()
-        try parsed.requireParameterCount(1)
-        let string = parsed.parameters[0].string ?? ""
-        return Future.map(on: parsed.container) { .string(string) }
+    /// See `TagRenderer`.
+    public func render(tag: TagContext) throws -> Future<TemplateData> {
+        try tag.requireNoBody()
+        try tag.requireParameterCount(1)
+        let string = tag.parameters[0].string ?? ""
+        return Future.map(on: tag) { .string(string) }
     }
 }
-
-
