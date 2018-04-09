@@ -34,3 +34,4 @@ public struct TemplateKitError: Debuggable {
         self.stackTrace = TemplateKitError.makeStackTrace()
     }
 }
+
