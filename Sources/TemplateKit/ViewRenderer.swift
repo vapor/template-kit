@@ -1,6 +1,6 @@
 import Foundation
 
-/// Renders raw template data (bytes), which can be specified as Encodable structures, to `View`s.
+/// Renders an Encodable object into a `View`.
 public protocol ViewRenderer: class {
 
     /// For view renderers that use a cache to optimize view loads, use this variable to toggle whether or not cache should be implemented
