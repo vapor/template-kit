@@ -17,3 +17,15 @@ public protocol ViewRenderer: class {
     /// - returns: `Future` containing the rendered `View`.
     func render<E>(_ path: String, _ context: E) -> Future<View> where E: Encodable
 }
+
+extension ViewRenderer where Self: TemplateRenderer {
+
+    public func render<E>(_ path: String, _ context: E) -> Future<View> where E: Encodable {
+        return Future.flatMap(on: container) {
+            return try TemplateDataEncoder().encode(context, on: self.container).flatMap(to: View.self) { context in
+                return self.render(path, context)
+            }
+        }
+    }
+    
+}
