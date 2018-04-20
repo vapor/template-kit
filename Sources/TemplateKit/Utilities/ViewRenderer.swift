@@ -1,11 +1,7 @@
 import Foundation
 
-///
 /// View renderers are responsible for loading
 /// the files paths given and caching if needed.
-///
-/// View renderers are also responsible for
-/// accepting a Node for templated responses.
 public protocol ViewRenderer: class {
 
     /// For view renderers that use a cache to
