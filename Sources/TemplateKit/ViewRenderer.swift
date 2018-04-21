@@ -20,6 +20,8 @@ public protocol ViewRenderer: class {
 
 extension ViewRenderer where Self: TemplateRenderer {
 
+    public static var shouldCache: Bool { return true }
+
     public func render<E>(_ path: String, _ context: E) -> Future<View> where E: Encodable {
         return (self as TemplateRenderer).render(path, context)
     }
