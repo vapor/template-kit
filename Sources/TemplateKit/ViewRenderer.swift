@@ -1,5 +1,3 @@
-import Foundation
-
 /// Renders an Encodable object into a `View`.
 public protocol ViewRenderer: class {
 
@@ -19,11 +17,15 @@ public protocol ViewRenderer: class {
 }
 
 extension ViewRenderer where Self: TemplateRenderer {
-
-    public var shouldCache: Bool { return true }
-
-    public func render<E>(_ path: String, _ context: E) -> Future<View> where E: Encodable {
-        return (self as TemplateRenderer).render(path, context)
+    /// See `ViewRenderer`.
+    public var shouldCache: Bool {
+        get { return astCache != nil }
+        set {
+            if newValue {
+                astCache = .init()
+            } else {
+                astCache = nil
+            }
+        }
     }
-    
 }
