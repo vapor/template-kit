@@ -13,6 +13,19 @@ class TemplateDataEncoderTests: XCTestCase {
         let data: Double = 3.14
         try XCTAssertEqual(TemplateDataEncoder().testEncode(data), .double(data))
     }
+    
+    func testDate() {
+        let interval: Double = -1000000
+        let date: Date = Date(timeIntervalSince1970: interval)
+        if let data: TemplateData = try? date.convertToTemplateData() {
+            XCTAssertEqual(data.date, date)
+            // note: test purposes only, interval cannot be recovered if not actually a Double(Int)
+            XCTAssertEqual(data.date?.timeIntervalSince1970, interval)
+        } else {
+            XCTFail()
+        }
+    }
+
 
     func testDictionary() {
         let data: [String: String] = ["string": "hello", "foo": "3.14"]
@@ -169,6 +182,7 @@ class TemplateDataEncoderTests: XCTestCase {
     static var allTests = [
         ("testString", testString),
         ("testDouble", testDouble),
+        ("testDate", testDate),
         ("testDictionary", testDictionary),
         ("testNestedDictionary", testNestedDictionary),
         ("testNestedArray", testNestedArray),
