@@ -202,7 +202,7 @@ public struct TemplateData: NestedData, Equatable, TemplateDataRepresentable {
     }
     
     /// Attempts to convert to `Date` or returns `nil`.
-    public var date: Double? {
+    public var date: Date? {
         switch storage {
         case .double(let d):
             return Date(timeIntervalSince1970: d)
