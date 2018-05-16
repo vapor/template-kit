@@ -169,7 +169,6 @@ class TemplateDataEncoderTests: XCTestCase {
     static var allTests = [
         ("testString", testString),
         ("testDouble", testDouble),
-        ("testDate", testDate),
         ("testDictionary", testDictionary),
         ("testNestedDictionary", testNestedDictionary),
         ("testNestedArray", testNestedArray),
