@@ -23,11 +23,17 @@ public enum TemplateExpression: CustomStringConvertible {
         ///
         case multiply
 
-        /// Divids the left value by the right value.
+        /// Divides the left value by the right value.
         ///
         ///     a / b
         ///
         case divide
+
+        /// The remainder from dividing the left value by the right value.
+        ///
+        ///     a % b
+        ///
+        case modulo
 
         /// Checks whether the left value is less than the right value.
         ///
@@ -84,6 +90,7 @@ public enum TemplateExpression: CustomStringConvertible {
             case .subtract: return "-"
             case .multiply: return "*"
             case .divide: return "/"
+            case .modulo: return "%"
             case .lessThan: return "<"
             case .greaterThan: return ">"
             case .lessThanOrEqual: return "<="
