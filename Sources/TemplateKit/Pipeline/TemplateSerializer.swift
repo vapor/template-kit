@@ -116,6 +116,7 @@ public final class TemplateSerializer {
                 case .subtract: return .double(leftDouble - rightDouble)
                 case .multiply: return .double(leftDouble * rightDouble)
                 case .divide: return .double(leftDouble / rightDouble)
+                case .modulo: return .double(leftDouble.truncatingRemainder(dividingBy: rightDouble))
                 case .greaterThan: return .bool(leftDouble > rightDouble)
                 case .lessThan: return .bool(leftDouble < rightDouble)
                 default:

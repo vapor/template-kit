@@ -200,7 +200,7 @@ public struct TemplateData: NestedData, Equatable, TemplateDataRepresentable {
             return nil
         }
     }
-
+    
     /// Attempts to convert to `[String: TemplateData]` or returns `nil`.
     public var dictionary: [String: TemplateData]? {
         switch storage {

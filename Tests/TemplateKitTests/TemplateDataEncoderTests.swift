@@ -13,7 +13,7 @@ class TemplateDataEncoderTests: XCTestCase {
         let data: Double = 3.14
         try XCTAssertEqual(TemplateDataEncoder().testEncode(data), .double(data))
     }
-
+    
     func testDictionary() {
         let data: [String: String] = ["string": "hello", "foo": "3.14"]
         try XCTAssertEqual(TemplateDataEncoder().testEncode(data), .dictionary([
