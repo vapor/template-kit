@@ -19,7 +19,11 @@ public final class DateFormat: TagRenderer {
         /// Assume the date is a floating point number
         let date = Date(timeIntervalSinceReferenceDate: tag.parameters[0].double ?? 0)
         /// Set format as the second param or default to ISO-8601 format.
-        formatter.dateFormat = tag.parameters[1].string ?? "yyyy-MM-dd HH:mm:ss"
+        if tag.parameters.count == 2, let param = tag.parameters[2].string {
+            formatter.dateFormat = param
+        } else {
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        }
 
         /// Return formatted date
         return Future.map(on: tag) { .string(formatter.string(from: date)) }
