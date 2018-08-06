@@ -40,28 +40,14 @@ extension TemplateRenderer {
     ///     - context: `TemplateData` to expose as context to the template.
     ///     - file: Template description, will be used for generating errors.
     /// - returns: `Future` containing the rendered `View`.
-    public func render(template: Data, _ context: TemplateData, file: String = "template") -> Future<View> {
-        return Future.flatMap(on: container) {
-            let hash = template.hashValue
-            let ast: [TemplateSyntax]
-            if let cached = self.astCache?.storage[hash] {
-                ast = cached
-            } else {
-                let scanner = TemplateByteScanner(data: template, file: file)
-                ast = try self.parser.parse(scanner: scanner)
-                self.astCache?.storage[hash] = ast
-            }
-
-            let serializer = TemplateSerializer(
-                renderer: self,
-                context: .init(data: context),
-                using: self.container
-            )
-            return serializer.serialize(ast: ast)
+    public func render(template: Data, _ context: TemplateData, file: String? = nil) -> Future<View> {
+        let path = file ?? "template"
+        do {
+            return try _serialize(context, _parse(template, file: path), file: path)
+        } catch {
+            return container.future(error: error)
         }
     }
-
-    // MARK: Convenience.
 
     /// Loads and renders a raw template at the supplied path.
     ///
@@ -70,18 +56,27 @@ extension TemplateRenderer {
     ///     - context: `TemplateData` to expose as context to the template.
     /// - returns: `Future` containing the rendered `View`.
     public func render(_ path: String, _ context: TemplateData) -> Future<View> {
-        let path = path.hasSuffix(templateFileEnding) ? path : path + templateFileEnding
-        let absolutePath = path.hasPrefix("/") ? path : relativeDirectory + path
-
-        guard let data = FileManager.default.contents(atPath: absolutePath) else {
-            let error = TemplateKitError(
-                identifier: "fileNotFound",
-                reason: "No file was found at path: \(absolutePath)"
-            )
-            return Future.map(on: container) { throw error }
+        do {
+            let path = path.hasSuffix(templateFileEnding) ? path : path + templateFileEnding
+            let absolutePath = path.hasPrefix("/") ? path : relativeDirectory + path
+            
+            let ast: [TemplateSyntax]
+            if let cached = astCache?.storage[absolutePath] {
+                ast = cached
+            } else {
+                guard let data = FileManager.default.contents(atPath: absolutePath) else {
+                    throw TemplateKitError(
+                        identifier: "fileNotFound",
+                        reason: "No file was found at path: \(absolutePath)"
+                    )
+                }
+                ast = try _parse(data, file: absolutePath)
+                astCache?.storage[absolutePath] = ast
+            }
+            return _serialize(context, ast, file: absolutePath)
+        } catch {
+            return container.future(error: error)
         }
-
-        return render(template: data, context, file: absolutePath)
     }
 
     /// Loads and renders a raw template at the supplied path using an empty context.
@@ -121,5 +116,19 @@ extension TemplateRenderer {
                 return self.render(path, context)
             }
         }
+    }
+    
+    private func _serialize(_ context: TemplateData, _ ast: [TemplateSyntax], file: String) -> Future<View> {
+        let serializer = TemplateSerializer(
+            renderer: self,
+            context: .init(data: context),
+            using: self.container
+        )
+        return serializer.serialize(ast: ast)
+    }
+    
+    private func _parse(_ template: Data, file: String) throws -> [TemplateSyntax] {
+        let scanner = TemplateByteScanner(data: template, file: file)
+        return try parser.parse(scanner: scanner)
     }
 }
