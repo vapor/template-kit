@@ -9,7 +9,7 @@
 /// The `templateFileEnding` should also be unique to that templating language.
 ///
 /// See each protocol requirement for more information.
-public protocol TemplateRenderer: class {
+public protocol TemplateRenderer: ViewRenderer {
     /// The available tags. `TemplateTag`s found in the AST will be looked up using this dictionary.
     var tags: [String: TagRenderer] { get }
 
@@ -31,24 +31,47 @@ public protocol TemplateRenderer: class {
 }
 
 extension TemplateRenderer {
-    // MARK: Render
+    /// See `ViewRenderer`.
+    public var shouldCache: Bool {
+        get { return astCache != nil }
+        set {
+            if newValue {
+                astCache = .init()
+            } else {
+                astCache = nil
+            }
+        }
+    }
+}
 
-    /// Renders template bytes into a view using the supplied context.
+extension TemplateRenderer {
+    // MARK: Render Path
+    
+    /// Loads and renders a raw template at the supplied path using an empty context.
     ///
     /// - parameters:
-    ///     - template: Raw template bytes.
-    ///     - context: `TemplateData` to expose as context to the template.
-    ///     - file: Template description, will be used for generating errors.
+    ///     - path: Path to file contianing raw template bytes.
     /// - returns: `Future` containing the rendered `View`.
-    public func render(template: Data, _ context: TemplateData, file: String? = nil) -> Future<View> {
-        let path = file ?? "template"
+    public func render(_ path: String) -> Future<View> {
+        return render(path, .null)
+    }
+    
+    /// Renders the template bytes into a view using the supplied `Encodable` object as context.
+    ///
+    /// - parameters:
+    ///     - path: Path to file contianing raw template bytes.
+    ///     - context: `Encodable` item that will be encoded to `TemplateData` and used as template context.
+    /// - returns: `Future` containing the rendered `View`.
+    public func render<E>(_ path: String, _ context: E) -> Future<View> where E: Encodable {
         do {
-            return try _serialize(context, _parse(template, file: path), file: path)
+            return try TemplateDataEncoder().encode(context, on: self.container).flatMap { context in
+                return self.render(path, context)
+            }
         } catch {
             return container.future(error: error)
         }
     }
-
+    
     /// Loads and renders a raw template at the supplied path.
     ///
     /// - parameters:
@@ -78,18 +101,9 @@ extension TemplateRenderer {
             return container.future(error: error)
         }
     }
-
-    /// Loads and renders a raw template at the supplied path using an empty context.
-    ///
-    /// - parameters:
-    ///     - path: Path to file contianing raw template bytes.
-    /// - returns: `Future` containing the rendered `View`.
-    public func render(_ path: String) -> Future<View> {
-        return render(path, .null)
-    }
-
-    // MARK: Codable
-
+    
+    // MARK: Render Data
+    
     /// Renders the template bytes into a view using the supplied `Encodable` object as context.
     ///
     /// - parameters:
@@ -97,27 +111,34 @@ extension TemplateRenderer {
     ///     - context: `Encodable` item that will be encoded to `TemplateData` and used as template context.
     /// - returns: `Future` containing the rendered `View`.
     public func render<E>(template: Data, _ context: E) -> Future<View> where E: Encodable {
-        return Future.flatMap(on: container) {
-            return try TemplateDataEncoder().encode(context, on: self.container).flatMap(to: View.self) { context in
+        do {
+            return try TemplateDataEncoder().encode(context, on: self.container).flatMap { context in
                 return self.render(template: template, context)
             }
-        }
-    }
-
-    /// Renders the template bytes into a view using the supplied `Encodable` object as context.
-    ///
-    /// - parameters:
-    ///     - path: Path to file contianing raw template bytes.
-    ///     - context: `Encodable` item that will be encoded to `TemplateData` and used as template context.
-    /// - returns: `Future` containing the rendered `View`.
-    public func render<E>(_ path: String, _ context: E) -> Future<View> where E: Encodable {
-        return Future.flatMap(on: container) {
-            return try TemplateDataEncoder().encode(context, on: self.container).flatMap(to: View.self) { context in
-                return self.render(path, context)
-            }
+        } catch {
+            return container.future(error: error)
         }
     }
     
+    /// Renders template bytes into a view using the supplied context.
+    ///
+    /// - parameters:
+    ///     - template: Raw template bytes.
+    ///     - context: `TemplateData` to expose as context to the template.
+    ///     - file: Template description, will be used for generating errors.
+    /// - returns: `Future` containing the rendered `View`.
+    public func render(template: Data, _ context: TemplateData, file: String? = nil) -> Future<View> {
+        let path = file ?? "template"
+        do {
+            return try _serialize(context, _parse(template, file: path), file: path)
+        } catch {
+            return container.future(error: error)
+        }
+    }
+    
+    // MARK: Private
+    
+    /// Serializes an AST + Context
     private func _serialize(_ context: TemplateData, _ ast: [TemplateSyntax], file: String) -> Future<View> {
         let serializer = TemplateSerializer(
             renderer: self,
@@ -127,6 +148,7 @@ extension TemplateRenderer {
         return serializer.serialize(ast: ast)
     }
     
+    /// Parses data to AST.
     private func _parse(_ template: Data, file: String) throws -> [TemplateSyntax] {
         let scanner = TemplateByteScanner(data: template, file: file)
         return try parser.parse(scanner: scanner)
