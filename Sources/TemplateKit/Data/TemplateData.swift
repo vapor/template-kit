@@ -180,6 +180,8 @@ public struct TemplateData: NestedData, Equatable, TemplateDataRepresentable {
             return lazy().data
         case .int(let i):
             return i.description.data(using: .utf8)
+        case .double(let d):
+            return d.description.data(using: .utf8)
         case .array(let arr):
             var data = Data()
 
