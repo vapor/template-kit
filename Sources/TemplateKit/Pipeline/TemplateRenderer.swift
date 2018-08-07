@@ -150,6 +150,7 @@ extension TemplateRenderer {
     
     /// Parses data to AST.
     private func _parse(_ template: Data, file: String) throws -> [TemplateSyntax] {
+        print("PARSE: \(file)")
         let scanner = TemplateByteScanner(data: template, file: file)
         return try parser.parse(scanner: scanner)
     }
