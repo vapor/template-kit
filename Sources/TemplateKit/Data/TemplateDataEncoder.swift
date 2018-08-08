@@ -228,4 +228,3 @@ fileprivate final class _TemplateDataUnkeyedEncoder: UnkeyedEncodingContainer {
         try value.encode(to: encoder)
     }
 }
-
