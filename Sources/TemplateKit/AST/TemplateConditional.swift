@@ -33,9 +33,9 @@ public final class TemplateConditional: CustomStringConvertible {
     /// See `CustomStringConvertible`.
     public var description: String {
         if let next = self.next {
-            return "if (\(condition)) { \(body) } else { \(next) }"
+            return "\(condition), \(body), \(next)"
         } else {
-            return "if (\(condition)) { \(body) }"
+            return "\(condition), \(body), nil"
         }
     }
 }

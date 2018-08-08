@@ -11,6 +11,29 @@ public protocol ViewRenderer: class {
     /// - parameters:
     ///     - path: Path to file contianing raw template bytes.
     ///     - context: `Encodable` item that will be encoded to `TemplateData` and used as template context.
+    ///     - userInfo: User-defined storage.
     /// - returns: `Future` containing the rendered `View`.
-    func render<E>(_ path: String, _ context: E) -> Future<View> where E: Encodable
+    func render<E>(_ path: String, _ context: E, userInfo: [AnyHashable: Any]) -> Future<View> where E: Encodable
+}
+
+extension ViewRenderer {
+    /// Renders the template bytes into a view using the supplied `Encodable` object as context.
+    ///
+    /// - parameters:
+    ///     - path: Path to file contianing raw template bytes.
+    ///     - context: `Encodable` item that will be encoded to `TemplateData` and used as template context.
+    /// - returns: `Future` containing the rendered `View`.
+    public func render<E>(_ path: String, _ context: E) -> Future<View> where E: Encodable {
+        return render(path, context, userInfo: [:])
+    }
+    
+    /// Loads and renders a raw template at the supplied path using an empty context.
+    ///
+    /// - parameters:
+    ///     - path: Path to file contianing raw template bytes.
+    ///     - userInfo: User-defined storage.
+    /// - returns: `Future` containing the rendered `View`.
+    public func render(_ path: String, userInfo: [AnyHashable: Any] = [:]) -> Future<View> {
+        return render(path, Dictionary<String, String>(), userInfo: userInfo)
+    }
 }

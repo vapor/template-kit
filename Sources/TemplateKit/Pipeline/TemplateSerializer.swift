@@ -108,23 +108,44 @@ public final class TemplateSerializer {
             case .and: return .bool(left.bool != false && right.bool != false)
             case .or: return .bool(left.bool != false || right.bool != false)
             default:
-                guard let leftDouble = left.double, let rightDouble = right.double else {
-                    return .bool(false)
-                }
-                switch infix {
-                case .add: return .double(leftDouble + rightDouble)
-                case .subtract: return .double(leftDouble - rightDouble)
-                case .multiply: return .double(leftDouble * rightDouble)
-                case .divide: return .double(leftDouble / rightDouble)
-                case .modulo: return .double(leftDouble.truncatingRemainder(dividingBy: rightDouble))
-                case .greaterThan: return .bool(leftDouble > rightDouble)
-                case .lessThan: return .bool(leftDouble < rightDouble)
+                switch (left.storage, right.storage) {
+                case (.int(let a), .int(let b)):
+                    // integer math
+                    switch infix {
+                    case .add: return .int(a + b)
+                    case .subtract: return .int(a - b)
+                    case .multiply: return .int(a * b)
+                    case .divide: return .int(a / b)
+                    case .modulo: return .int(a % b)
+                    case .greaterThan: return .bool(a > b)
+                    case .lessThan: return .bool(a < b)
+                    default:
+                        throw TemplateKitError(
+                            identifier: "renderInfix",
+                            reason: "Unsupported infix operator: \(infix).",
+                            source: source
+                        )
+                    }
                 default:
-                    throw TemplateKitError(
-                        identifier: "renderInfix",
-                        reason: "Unsupported infix operator: \(infix).",
-                        source: source
-                    )
+                    // default to double conversion math
+                    guard let leftDouble = left.double, let rightDouble = right.double else {
+                        return .bool(false)
+                    }
+                    switch infix {
+                    case .add: return .double(leftDouble + rightDouble)
+                    case .subtract: return .double(leftDouble - rightDouble)
+                    case .multiply: return .double(leftDouble * rightDouble)
+                    case .divide: return .double(leftDouble / rightDouble)
+                    case .modulo: return .double(leftDouble.truncatingRemainder(dividingBy: rightDouble))
+                    case .greaterThan: return .bool(leftDouble > rightDouble)
+                    case .lessThan: return .bool(leftDouble < rightDouble)
+                    default:
+                        throw TemplateKitError(
+                            identifier: "renderInfix",
+                            reason: "Unsupported infix operator: \(infix).",
+                            source: source
+                        )
+                    }
                 }
             }
         }
