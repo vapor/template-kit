@@ -176,8 +176,13 @@ fileprivate final class _TemplateDataKeyedEncoder<K>: KeyedEncodingContainerProt
     }
 
     func encode<T>(_ value: T, forKey key: K) throws where T: Encodable {
-        let encoder = _TemplateDataEncoder(context: context, codingPath: codingPath + [key])
-        try value.encode(to: encoder)
+        if let data = value as? TemplateDataRepresentable {
+            try context.data.set(to: .data(data.convertToTemplateData()), at: codingPath + [key])
+        } else {
+            
+            let encoder = _TemplateDataEncoder(context: context, codingPath: codingPath + [key])
+            try value.encode(to: encoder)
+        }
     }
 }
 
@@ -223,4 +228,3 @@ fileprivate final class _TemplateDataUnkeyedEncoder: UnkeyedEncodingContainer {
         try value.encode(to: encoder)
     }
 }
-

@@ -165,6 +165,41 @@ class TemplateDataEncoderTests: XCTestCase {
         ).serialize(ast: ast).wait()
         XCTAssertEqual(String(data: view.data, encoding: .utf8), "headVaportail")
     }
+    
+    // https://github.com/vapor/template-kit/issues/20
+    func testGH20() throws {
+        func wrap(_ syntax: TemplateSyntaxType) -> TemplateSyntax {
+            return TemplateSyntax(type: syntax, source: TemplateSource(file: "test", line: 0, column: 0, range: 0..<1))
+        }
+        
+        let path: [CodingKey] = [
+            BasicKey.init("date"),
+        ]
+
+        let worker = EmbeddedEventLoop()
+        let container = BasicContainer(config: .init(), environment: .testing, services: .init(), on: worker)
+        let renderer = PlaintextRenderer(viewsDir: "/", on: container)
+        renderer.tags["date"] = DateFormat()
+        let ast: [TemplateSyntax] = [
+            wrap(.tag(TemplateTag(
+                name: "date",
+                parameters: [wrap(.identifier(TemplateIdentifier(path: path)))],
+                body: nil
+            )))
+        ]
+        let date = Date()
+        let data = try TemplateDataEncoder().testEncode(["date": date])
+        print(data)
+        let view = try TemplateSerializer(
+            renderer: renderer,
+            context: TemplateDataContext(data: data),
+            using: container
+        ).serialize(ast: ast).wait()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        print(formatter.string(from: date))
+        XCTAssertEqual(String(data: view.data, encoding: .utf8), formatter.string(from: date))
+    }
 
     static var allTests = [
         ("testString", testString),
@@ -176,6 +211,7 @@ class TemplateDataEncoderTests: XCTestCase {
         ("testComplexEncodable", testComplexEncodable),
         ("testNestedEncodable", testNestedEncodable),
         ("testGH10", testGH10),
+        ("testGH20", testGH20),
     ]
 }
 

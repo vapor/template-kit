@@ -9,7 +9,7 @@
 /// The `templateFileEnding` should also be unique to that templating language.
 ///
 /// See each protocol requirement for more information.
-public protocol TemplateRenderer: class {
+public protocol TemplateRenderer: ViewRenderer {
     /// The available tags. `TemplateTag`s found in the AST will be looked up using this dictionary.
     var tags: [String: TagRenderer] { get }
 
@@ -31,59 +31,22 @@ public protocol TemplateRenderer: class {
 }
 
 extension TemplateRenderer {
-    // MARK: Render
-
-    /// Renders template bytes into a view using the supplied context.
-    ///
-    /// - parameters:
-    ///     - template: Raw template bytes.
-    ///     - context: `TemplateData` to expose as context to the template.
-    ///     - file: Template description, will be used for generating errors.
-    /// - returns: `Future` containing the rendered `View`.
-    public func render(template: Data, _ context: TemplateData, file: String = "template") -> Future<View> {
-        return Future.flatMap(on: container) {
-            let hash = template.hashValue
-            let ast: [TemplateSyntax]
-            if let cached = self.astCache?.storage[hash] {
-                ast = cached
+    /// See `ViewRenderer`.
+    public var shouldCache: Bool {
+        get { return astCache != nil }
+        set {
+            if newValue {
+                astCache = .init()
             } else {
-                let scanner = TemplateByteScanner(data: template, file: file)
-                ast = try self.parser.parse(scanner: scanner)
-                self.astCache?.storage[hash] = ast
+                astCache = nil
             }
-
-            let serializer = TemplateSerializer(
-                renderer: self,
-                context: .init(data: context),
-                using: self.container
-            )
-            return serializer.serialize(ast: ast)
         }
     }
+}
 
-    // MARK: Convenience.
-
-    /// Loads and renders a raw template at the supplied path.
-    ///
-    /// - parameters:
-    ///     - path: Path to file contianing raw template bytes.
-    ///     - context: `TemplateData` to expose as context to the template.
-    /// - returns: `Future` containing the rendered `View`.
-    public func render(_ path: String, _ context: TemplateData) -> Future<View> {
-        let path = path.hasSuffix(templateFileEnding) ? path : path + templateFileEnding
-        let absolutePath = path.hasPrefix("/") ? path : relativeDirectory + path
-
-        guard let data = FileManager.default.contents(atPath: absolutePath) else {
-            let error = TemplateKitError(
-                identifier: "fileNotFound",
-                reason: "No file was found at path: \(absolutePath)"
-            )
-            return Future.map(on: container) { throw error }
-        }
-
-        return render(template: data, context, file: absolutePath)
-    }
-
+extension TemplateRenderer {
+    // MARK: Render Path
+    
     /// Loads and renders a raw template at the supplied path using an empty context.
     ///
     /// - parameters:
@@ -92,23 +55,7 @@ extension TemplateRenderer {
     public func render(_ path: String) -> Future<View> {
         return render(path, .null)
     }
-
-    // MARK: Codable
-
-    /// Renders the template bytes into a view using the supplied `Encodable` object as context.
-    ///
-    /// - parameters:
-    ///     - template: Raw template bytes.
-    ///     - context: `Encodable` item that will be encoded to `TemplateData` and used as template context.
-    /// - returns: `Future` containing the rendered `View`.
-    public func render<E>(template: Data, _ context: E) -> Future<View> where E: Encodable {
-        return Future.flatMap(on: container) {
-            return try TemplateDataEncoder().encode(context, on: self.container).flatMap(to: View.self) { context in
-                return self.render(template: template, context)
-            }
-        }
-    }
-
+    
     /// Renders the template bytes into a view using the supplied `Encodable` object as context.
     ///
     /// - parameters:
@@ -116,10 +63,95 @@ extension TemplateRenderer {
     ///     - context: `Encodable` item that will be encoded to `TemplateData` and used as template context.
     /// - returns: `Future` containing the rendered `View`.
     public func render<E>(_ path: String, _ context: E) -> Future<View> where E: Encodable {
-        return Future.flatMap(on: container) {
-            return try TemplateDataEncoder().encode(context, on: self.container).flatMap(to: View.self) { context in
+        do {
+            return try TemplateDataEncoder().encode(context, on: self.container).flatMap { context in
                 return self.render(path, context)
             }
+        } catch {
+            return container.future(error: error)
         }
+    }
+    
+    /// Loads and renders a raw template at the supplied path.
+    ///
+    /// - parameters:
+    ///     - path: Path to file contianing raw template bytes.
+    ///     - context: `TemplateData` to expose as context to the template.
+    /// - returns: `Future` containing the rendered `View`.
+    public func render(_ path: String, _ context: TemplateData) -> Future<View> {
+        do {
+            let path = path.hasSuffix(templateFileEnding) ? path : path + templateFileEnding
+            let absolutePath = path.hasPrefix("/") ? path : relativeDirectory + path
+            
+            let ast: [TemplateSyntax]
+            if let cached = astCache?.storage[absolutePath] {
+                ast = cached
+            } else {
+                guard let data = FileManager.default.contents(atPath: absolutePath) else {
+                    throw TemplateKitError(
+                        identifier: "fileNotFound",
+                        reason: "No file was found at path: \(absolutePath)"
+                    )
+                }
+                ast = try _parse(data, file: absolutePath)
+                astCache?.storage[absolutePath] = ast
+            }
+            return _serialize(context, ast, file: absolutePath)
+        } catch {
+            return container.future(error: error)
+        }
+    }
+    
+    // MARK: Render Data
+    
+    /// Renders the template bytes into a view using the supplied `Encodable` object as context.
+    ///
+    /// - parameters:
+    ///     - template: Raw template bytes.
+    ///     - context: `Encodable` item that will be encoded to `TemplateData` and used as template context.
+    /// - returns: `Future` containing the rendered `View`.
+    public func render<E>(template: Data, _ context: E) -> Future<View> where E: Encodable {
+        do {
+            return try TemplateDataEncoder().encode(context, on: self.container).flatMap { context in
+                return self.render(template: template, context)
+            }
+        } catch {
+            return container.future(error: error)
+        }
+    }
+    
+    /// Renders template bytes into a view using the supplied context.
+    ///
+    /// - parameters:
+    ///     - template: Raw template bytes.
+    ///     - context: `TemplateData` to expose as context to the template.
+    ///     - file: Template description, will be used for generating errors.
+    /// - returns: `Future` containing the rendered `View`.
+    public func render(template: Data, _ context: TemplateData, file: String? = nil) -> Future<View> {
+        let path = file ?? "template"
+        do {
+            return try _serialize(context, _parse(template, file: path), file: path)
+        } catch {
+            return container.future(error: error)
+        }
+    }
+    
+    // MARK: Private
+    
+    /// Serializes an AST + Context
+    private func _serialize(_ context: TemplateData, _ ast: [TemplateSyntax], file: String) -> Future<View> {
+        let serializer = TemplateSerializer(
+            renderer: self,
+            context: .init(data: context),
+            using: self.container
+        )
+        return serializer.serialize(ast: ast)
+    }
+    
+    /// Parses data to AST.
+    private func _parse(_ template: Data, file: String) throws -> [TemplateSyntax] {
+        print("PARSE: \(file)")
+        let scanner = TemplateByteScanner(data: template, file: file)
+        return try parser.parse(scanner: scanner)
     }
 }
