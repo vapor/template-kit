@@ -82,6 +82,24 @@ public enum TemplateExpression: CustomStringConvertible {
         ///     a || b
         ///
         case or
+        
+        public var order: Int {
+            switch self {
+            case .add: return 4
+            case .subtract: return 4
+            case .multiply: return 3
+            case .divide: return 3
+            case .modulo: return 3
+            case .lessThan: return 5
+            case .greaterThan: return 5
+            case .lessThanOrEqual: return 5
+            case .greaterThanOrEqual: return 5
+            case .equal: return 5
+            case .notEqual: return 5
+            case .and: return 6
+            case .or: return 6
+            }
+        }
 
         /// See `CustomStringConvertible`.
         public var description: String {

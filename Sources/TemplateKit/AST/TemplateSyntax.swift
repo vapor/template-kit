@@ -21,16 +21,21 @@ public struct TemplateSyntax: CustomStringConvertible {
     public var description: String {
         switch type {
         case .raw(let source):
-            let string = String(data: source.data, encoding: .utf8) ?? "n/a"
-            return "Raw: \(string)"
-        case .tag(let tag): return "Tag: \(tag)"
-        case .identifier(let name): return "Identifier: \(name.path)"
-        case .expression(let expr): return "Expression: (\(expr))"
-        case .constant(let const): return "Contstant: \(const)"
-        case .embed(let embed): return "Embed: \(embed.path)"
-        case .conditional(let cond): return "Conditional: \(cond))"
-        case .iterator(let it): return "Iterator: \(it)"
-        case .custom: return "Custom: ()"
+            var string = String(data: source.data, encoding: .utf8) ?? "n/a"
+            string = string.replacingOccurrences(of: "\n", with: "\\n")
+            return "raw(\"\(string)\")"
+        case .tag(let tag):
+            let params = tag.parameters.map { $0.description }.joined(separator: ", ")
+            return "tag(\"\(tag.name)\", [\(params)])"
+        case .identifier(let name):
+            let path = name.path.map { $0.stringValue }.joined(separator: ".")
+            return "id(\(path))"
+        case .expression(let expr): return "(\(expr))"
+        case .constant(let const): return "\(const)"
+        case .embed(let embed): return "embed\(embed.path)"
+        case .conditional(let cond): return "cond(\(cond))"
+        case .iterator(let it): return "while\(it)"
+        case .custom: return "custom()"
         }
     }
 }
