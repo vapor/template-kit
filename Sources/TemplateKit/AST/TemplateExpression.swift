@@ -82,7 +82,8 @@ public enum TemplateExpression: CustomStringConvertible {
         ///     a || b
         ///
         case or
-        
+
+        /// Operator precedence order (used internally by `LeafParser` when extracting parameters).
         public var order: Int {
             switch self {
             case .add: return 4
