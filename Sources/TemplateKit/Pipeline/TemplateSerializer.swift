@@ -184,7 +184,7 @@ public final class TemplateSerializer {
                 )
             }
 
-            return self.renderer.render(path, self.context.data)
+            return self.renderer.render(path, self.context.data, userInfo: self.context.userInfo)
                 .map(to: TemplateData.self) { .data($0.data) }
         }
     }
