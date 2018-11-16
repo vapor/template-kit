@@ -3,7 +3,7 @@ import Foundation
 extension String {
     /// Escapes HTML entities in a `String`.
     internal func htmlEscaped() -> String {
-        /// FIXME: performance
+        #warning("FIXME: performance")
         return replacingOccurrences(of: "&", with: "&amp;")
             .replacingOccurrences(of: "\"", with: "&quot;")
             .replacingOccurrences(of: "'", with: "&#39;")

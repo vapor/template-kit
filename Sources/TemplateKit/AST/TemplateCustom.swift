@@ -8,13 +8,13 @@
 /// to add custom functionality in the future.
 public struct TemplateCustom {
     /// Renders `TemplateData` using the current `TemplateSerializer`.
-    public let render: (TemplateSerializer) -> Future<TemplateData>
+    public let render: (TemplateDataContext) throws -> TemplateData
 
     /// Creates a new `TemplateCustom`.
     ///
     /// - parameters:
     ///     - render: Renders `TemplateData` using the current `TemplateSerializer`.
-    public init(_ render: @escaping (TemplateSerializer) -> Future<TemplateData>) {
+    public init(_ render: @escaping (TemplateDataContext) throws -> TemplateData) {
         self.render = render
     }
 }

@@ -1,6 +1,8 @@
+import NIO
+
 /// Contains contextual information corresponding to a `TemplateTag` in the AST.
 /// This information will be passed to the `TagRenderer` for the identified tag.
-public final class TagContext: BasicWorker {
+public final class TagContext {
     /// Name used for this tag as registered to the `TemplateRenderer`.
     public let name: String
 
@@ -8,42 +10,27 @@ public final class TagContext: BasicWorker {
     public let parameters: [TemplateData]
 
     /// Optional tag body.
-    public let body: [TemplateSyntax]?
+    public let body: TemplateData?
 
     /// `TemplateSource` code location of this parsed tag
     public let source: TemplateSource
 
-    /// Current `Container`, use this as a `Worker` or to create services.
-    public let container: Container
-
     /// Use this `TemplateDataContext` to access to current `TemplateData`.
     public let context: TemplateDataContext
-
-    /// The `TemplateSerializer`. that created this context.
-    public let serializer: TemplateSerializer
-
-    /// See `BasicWorker`.
-    public var eventLoop: EventLoop {
-        return container.eventLoop
-    }
 
     /// Creates a new `TagContext`.
     public init(
         name: String,
         parameters: [TemplateData],
-        body: [TemplateSyntax]?,
+        body: TemplateData?,
         source: TemplateSource,
-        context: TemplateDataContext,
-        serializer: TemplateSerializer,
-        using container: Container
+        context: TemplateDataContext
     ) {
         self.name = name
         self.parameters = parameters
         self.body = body
         self.source = source
         self.context = context
-        self.serializer = serializer
-        self.container = container
     }
 
     /// Create a general `TemplateTagError` with metadata such as the `TemplateSource`.
@@ -66,7 +53,7 @@ public final class TagContext: BasicWorker {
     }
 
     /// Throws an error if this tag does not include a body.
-    public func requireBody() throws -> [TemplateSyntax] {
+    public func requireBody() throws -> TemplateData {
         guard let body = body else {
             throw error(reason: "Missing body")
         }

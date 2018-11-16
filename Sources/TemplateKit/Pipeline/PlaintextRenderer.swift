@@ -1,3 +1,5 @@
+import NIO
+
 /// Renders templates as plaintext.
 public final class PlaintextRenderer: TemplateRenderer, TemplateParser {
     /// See `TemplateRenderer`.
@@ -18,22 +20,28 @@ public final class PlaintextRenderer: TemplateRenderer, TemplateParser {
     public var relativeDirectory: String
 
     /// See `TemplateRenderer`.
-    public var container: Container
+    public var eventLoop: EventLoop
+    
+    public var baseContext: [String : TemplateData]
+    
+    public var fileIO: NonBlockingFileIO
 
     /// Create a new `PlaintextRenderer`.
-    public init(viewsDir: String, on container: Container) {
+    public init(viewsDir: String, fileIO: NonBlockingFileIO, on eventLoop: EventLoop) {
         self.tags = [:]
         self.astCache = nil
         self.templateFileEnding = ""
         self.relativeDirectory = viewsDir
-        self.container = container
+        self.eventLoop = eventLoop
+        self.baseContext = [:]
+        self.fileIO = fileIO
     }
 
     /// See `TemplateParser`.
-    public func parse(scanner: TemplateByteScanner) throws -> [TemplateSyntax] {
+    public func parse(scanner: TemplateScanner) throws -> [TemplateSyntax] {
         let plaintext = TemplateSyntax(
             type: .raw(TemplateRaw(data: scanner.data)),
-            source: TemplateSource(file: scanner.file, line: 0, column: 0, range: 0..<scanner.data.count)
+            source: TemplateSource(file: "data", line: 0, column: 0, range: 0..<scanner.data.readableBytes)
         )
         return [plaintext]
     }

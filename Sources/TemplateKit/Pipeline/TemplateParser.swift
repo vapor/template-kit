@@ -5,5 +5,5 @@ public protocol TemplateParser {
     /// - parameters:
     ///     - scanner: `TemplateByteScanner` to parse bytes from.
     /// - returns: TemplateKit AST.
-    func parse(scanner: TemplateByteScanner) throws -> [TemplateSyntax]
+    func parse(scanner: TemplateScanner) throws -> [TemplateSyntax]
 }

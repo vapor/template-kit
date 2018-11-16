@@ -1,3 +1,5 @@
+import Foundation
+
 /// Formats a floating-point time interval since epoch date to a specified format.
 ///
 ///     dateFormat(<timeIntervalSinceEpoch>, <dateFormat?>)
@@ -8,24 +10,25 @@ public final class DateFormat: TagRenderer {
     public init() {}
 
     /// See `TagRenderer`.
-    public func render(tag: TagContext) throws -> Future<TemplateData> {
+    public func render(tag: TagContext) throws -> TemplateData {
         /// Require at least one parameter.
         switch tag.parameters.count {
         case 1, 2: break
         default: throw tag.error(reason: "Invalid parameter count: \(tag.parameters.count). 1 or 2 required.")
         }
 
+        #warning("FIXME: performance")
         let formatter = DateFormatter()
         /// Assume the date is a floating point number
-        let date = Date(timeIntervalSince1970: tag.parameters[0].double ?? 0)
+        let date = Date(timeIntervalSince1970: tag.parameters[0].asDouble ?? 0)
         /// Set format as the second param or default to ISO-8601 format.
-        if tag.parameters.count == 2, let param = tag.parameters[1].string {
+        if tag.parameters.count == 2, case .string(let param) = tag.parameters[1] {
             formatter.dateFormat = param
         } else {
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         }
 
         /// Return formatted date
-        return Future.map(on: tag) { .string(formatter.string(from: date)) }
+        return .string(formatter.string(from: date))
     }
 }

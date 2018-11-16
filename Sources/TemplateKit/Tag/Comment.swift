@@ -4,7 +4,7 @@ public final class Comment: TagRenderer {
     public init() {}
 
     /// See `TagRenderer`.
-    public func render(tag: TagContext) throws -> Future<TemplateData> {
-        return Future.map(on: tag) { .string("") }
+    public func render(tag: TagContext) throws -> TemplateData {
+        return .string("")
     }
 }

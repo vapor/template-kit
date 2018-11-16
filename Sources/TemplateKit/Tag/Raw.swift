@@ -7,10 +7,9 @@ public final class Raw: TagRenderer {
     public init() { }
 
     /// See `TagRenderer`.
-    public func render(tag: TagContext) throws -> Future<TemplateData> {
+    public func render(tag: TagContext) throws -> TemplateData {
         try tag.requireNoBody()
         try tag.requireParameterCount(1)
-        let string = tag.parameters[0].string ?? ""
-        return Future.map(on: tag) { .string(string) }
+        return tag.parameters[0]
     }
 }

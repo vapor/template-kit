@@ -1,22 +1,12 @@
+import NIO
+
 /// A rendered template.
-public struct View: Codable {
+public struct View {
     /// The view's raw data.
-    public let data: Data
+    public let data: String
 
     /// Create a new `View`.
-    public init(data: Data) {
+    public init(data: String) {
         self.data = data
-    }
-
-    /// See `Encodable`
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(data)
-    }
-
-    /// See `Decodable`.
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        try self.init(data: container.decode(Data.self))
     }
 }

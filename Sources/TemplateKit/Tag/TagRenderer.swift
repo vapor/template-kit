@@ -7,7 +7,7 @@ public protocol TagRenderer {
     /// - parameters:
     ///     - tag: The `TagContext` containing information about the invocation of this tag.
     /// - returns: Serialized `TemplateData`.
-    func render(tag: TagContext) throws -> Future<TemplateData>
+    func render(tag: TagContext) throws -> TemplateData
 }
 
 // MARK: Global

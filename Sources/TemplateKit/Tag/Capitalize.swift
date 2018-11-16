@@ -6,12 +6,11 @@ public final class Capitalize: TagRenderer {
     public init() {}
 
     /// See `TagRenderer`.
-    public func render(tag: TagContext) throws -> Future<TemplateData> {
-        /// Require exactly one parameter (thing to capitalize)
+    public func render(tag: TagContext) throws -> TemplateData {
         try tag.requireParameterCount(1)
-
-        /// Convert the item to a `String` or default to `""`.
-        let string = tag.parameters[0].string?.capitalized ?? ""
-        return Future.map(on: tag) { .string(string) }
+        switch tag.parameters[0] {
+        case .string(let string): return .string(string.capitalized)
+        default: return .null
+        }
     }
 }

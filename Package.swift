@@ -1,20 +1,16 @@
-// swift-tools-version:4.0
+// swift-tools-version:4.2
 import PackageDescription
 
 let package = Package(
-    name: "TemplateKit",
+    name: "template-kit",
     products: [
         .library(name: "TemplateKit", targets: ["TemplateKit"]),
     ],
     dependencies: [
-        // 🌎 Utility package containing tools for byte manipulation, Codable, OS APIs, and debugging.
-        .package(url: "https://github.com/vapor/core.git", from: "3.0.0"),
-
-        // 📦 Dependency injection / inversion of control framework.
-        .package(url: "https://github.com/vapor/service.git", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-nio.git", from: "1.10.0")
     ],
     targets: [
-        .target(name: "TemplateKit", dependencies: ["Async", "Bits", "Core", "Service"]),
+        .target(name: "TemplateKit", dependencies: ["NIO"]),
         .testTarget(name: "TemplateKitTests", dependencies: ["TemplateKit"]),
     ]
 )
