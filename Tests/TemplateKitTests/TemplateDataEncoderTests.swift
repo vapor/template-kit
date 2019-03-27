@@ -220,6 +220,7 @@ class TemplateDataEncoderTests: XCTestCase {
         ("testNestedEncodable", testNestedEncodable),
         ("testGH10", testGH10),
         ("testGH20", testGH20),
+        ("testTemplabeByteScannerPeak", testTemplabeByteScannerPeak),
     ]
 }
 
