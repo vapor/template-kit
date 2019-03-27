@@ -46,7 +46,7 @@ public final class TemplateByteScanner {
     /// - returns:
     ///     - Byte requested if not past end of data.
     public func peek(by amount: Int = 0) -> UInt8? {
-        guard pointer + amount < buffer.count else {
+        guard pointer + amount < buffer.count && pointer + amount >= 0 else {
             return nil
         }
         return buffer[pointer + amount]

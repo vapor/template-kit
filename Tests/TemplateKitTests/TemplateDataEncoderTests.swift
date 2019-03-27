@@ -200,6 +200,14 @@ class TemplateDataEncoderTests: XCTestCase {
         print(formatter.string(from: date))
         XCTAssertEqual(String(data: view.data, encoding: .utf8), formatter.string(from: date))
     }
+    
+    func testTemplabeByteScannerPeak() {
+        let scanner = TemplateByteScanner(data: Data(), file: "empty")
+        
+        XCTAssertNil(scanner.peek(by: 0))
+        XCTAssertNil(scanner.peek(by: -1))
+        XCTAssertNil(scanner.peek(by: 1))
+    }
 
     static var allTests = [
         ("testString", testString),
