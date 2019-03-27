@@ -152,7 +152,6 @@ class TemplateDataEncoderTests: XCTestCase {
         let profile = Profile(currentUser: Future.map(on: worker) { user })
 
         let data = try TemplateDataEncoder().testEncode(profile)
-        print(data)
         let container = BasicContainer(config: .init(), environment: .testing, services: .init(), on: worker)
 
         let renderer = PlaintextRenderer(viewsDir: "/", on: container)
@@ -189,15 +188,16 @@ class TemplateDataEncoderTests: XCTestCase {
         ]
         let date = Date()
         let data = try TemplateDataEncoder().testEncode(["date": date])
-        print(data)
         let view = try TemplateSerializer(
             renderer: renderer,
             context: TemplateDataContext(data: data),
             using: container
         ).serialize(ast: ast).wait()
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        print(formatter.string(from: date))
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSXXXXX"
         XCTAssertEqual(String(data: view.data, encoding: .utf8), formatter.string(from: date))
     }
 
