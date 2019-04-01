@@ -110,6 +110,96 @@ class TemplateDataEncoderTests: XCTestCase {
         ]))
     }
 
+    func testEncodeSuperDefaultImplementation() {
+        class A: Encodable {
+            var foo = "foo"
+        }
+        class B: A {
+            var bar = "bar"
+        }
+        try XCTAssertEqual(TemplateDataEncoder().testEncode(B()), .dictionary([
+            "foo": .string("foo"),
+            ]))
+    }
+
+    func testEncodeSuperCustomImplementation() {
+        class A: Encodable {
+            var foo = "foo"
+        }
+        class B: A {
+            var bar = "bar"
+
+            enum CodingKeys: String, CodingKey {
+                case bar
+            }
+
+            override func encode(to encoder: Encoder) throws {
+                // Note: `super` will also call `encoder.container(keyedBy:)`; we want to ensure that the data written
+                // by `super` will still be present in the final dictionary.
+                try super.encode(to: encoder)
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                try container.encode(bar, forKey: .bar)
+            }
+        }
+        
+        try XCTAssertEqual(TemplateDataEncoder().testEncode(B()), .dictionary([
+            "foo": .string("foo"),
+            "bar": .string("bar"),
+            ]))
+    }
+
+    func testEncodeSuperCustomImplementationWithSuperEncoder1() {
+        class A: Encodable {
+            var foo = "foo"
+        }
+        class B: A {
+            var bar = "bar"
+
+            enum CodingKeys: String, CodingKey {
+                case bar
+            }
+
+            override func encode(to encoder: Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                try container.encode(bar, forKey: .bar)
+                try super.encode(to: container.superEncoder())
+            }
+        }
+
+        try XCTAssertEqual(TemplateDataEncoder().testEncode(B()), .dictionary([
+            "super": .dictionary(["foo": .string("foo")]),
+            "bar": .string("bar"),
+            ]))
+    }
+
+    func testEncodeSuperCustomImplementationWithSuperEncoder2() {
+        class A: Encodable {
+            var foo = "foo"
+
+            func encode(to encoder: Encoder) throws {
+                var container = encoder.singleValueContainer()
+                try container.encode(foo)
+            }
+        }
+        class B: A {
+            var bar = "bar"
+
+            enum CodingKeys: String, CodingKey {
+                case bar
+            }
+
+            override func encode(to encoder: Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                try container.encode(bar, forKey: .bar)
+                try super.encode(to: container.superEncoder())
+            }
+        }
+        try XCTAssertEqual(TemplateDataEncoder().testEncode(B()), .dictionary([
+            "super": .string("foo"),
+            "bar": .string("bar"),
+            ]))
+    }
+
     func testGH10() throws {
         func wrap(_ syntax: TemplateSyntaxType) -> TemplateSyntax {
             return TemplateSyntax(type: syntax, source: TemplateSource(file: "test", line: 0, column: 0, range: 0..<1))
@@ -200,7 +290,69 @@ class TemplateDataEncoderTests: XCTestCase {
         print(formatter.string(from: date))
         XCTAssertEqual(String(data: view.data, encoding: .utf8), formatter.string(from: date))
     }
+}
 
+// MARK: - Performance
+extension TemplateDataEncoderTests {
+    private struct ExampleModel: Encodable {
+        var id: Int = 1
+        
+        var string1: String = "a"
+        var string2: String = String(repeating: "b", count: 5)
+        var string3: String = String(repeating: "abcdef", count: 2)
+        var string4: String? = String(repeating: "abc1", count: 4)
+        var string5: String? = String(repeating: "xyz2", count: 4)
+        var string6: String? = String(repeating: "100letters", count: 10)
+        
+        var emptyString1: String? = nil
+        var emptyString2: String? = nil
+        var emptyString3: String? = nil
+        
+        var int1: Int = 1
+        var int2: Int = 2
+        var int3: Int? = nil
+        var int4: UInt8 = 1
+        var int5: UInt8 = 2
+        var int6: UInt8? = nil
+        
+        var date1: Date = Date(timeIntervalSince1970: 1546300800)  // Midnight (GMT) April 1st, 2019
+        var date2: Date? = Date(timeIntervalSince1970: 1546300800)  // Midnight (GMT) April 1st, 2019
+        var date3: Date? = nil
+        
+        var double1: Double = 1
+        var double2: Double? = 2
+        var double3: Double? = nil
+        
+        var data1: Data = Data(repeating: 1, count: 16)
+        var data2: Data = Data(repeating: 1, count: 32)
+        var data3: Data? = Data(repeating: 2, count: 200)
+        
+        var uuid: UUID = UUID()
+    }
+    
+    private struct Wrapper<E: Encodable>: Encodable {
+        var wrapped: E
+        
+        init(_ wrapped: E) { self.wrapped = wrapped }
+    }
+    
+    private static let exampleModelTestArray = Wrapper(Wrapper(Wrapper(Array(repeating: ExampleModel(), count: 500))))
+
+    func testEncodingPerformanceExampleModelJSONBaseline() throws {
+        // Used as a baseline to compare `testEncodingPerformanceExampleModel` against.
+        measure {
+            _ = try! JSONEncoder().encode(TemplateDataEncoderTests.exampleModelTestArray)
+        }
+    }
+    
+    func testEncodingPerformanceExampleModel() throws {
+        measure {
+            _ = try! TemplateDataEncoder().testEncode(TemplateDataEncoderTests.exampleModelTestArray)
+        }
+    }
+}
+
+extension TemplateDataEncoderTests {
     static var allTests = [
         ("testString", testString),
         ("testDouble", testDouble),
@@ -210,9 +362,15 @@ class TemplateDataEncoderTests: XCTestCase {
         ("testEncodable", testEncodable),
         ("testComplexEncodable", testComplexEncodable),
         ("testNestedEncodable", testNestedEncodable),
+        ("testEncodeSuperDefaultImplementation", testEncodeSuperDefaultImplementation),
+        ("testEncodeSuperCustomImplementation", testEncodeSuperCustomImplementation),
+        ("testEncodeSuperCustomImplementationWithSuperEncoder1", testEncodeSuperCustomImplementationWithSuperEncoder1),
+        ("testEncodeSuperCustomImplementationWithSuperEncoder2", testEncodeSuperCustomImplementationWithSuperEncoder2),
         ("testGH10", testGH10),
         ("testGH20", testGH20),
-    ]
+        ("testEncodingPerformanceExampleModelJSONBaseline", testEncodingPerformanceExampleModelJSONBaseline),
+        ("testEncodingPerformanceExampleModel", testEncodingPerformanceExampleModel),
+        ]
 }
 
 extension TemplateDataEncoder {
