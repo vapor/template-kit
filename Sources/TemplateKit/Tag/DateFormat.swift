@@ -15,17 +15,41 @@ public final class DateFormat: TagRenderer {
         default: throw tag.error(reason: "Invalid parameter count: \(tag.parameters.count). 1 or 2 required.")
         }
 
-        let formatter = DateFormatter()
         /// Assume the date is a floating point number
         let date = Date(timeIntervalSince1970: tag.parameters[0].double ?? 0)
+
+        let dateFormatterCache: DateFormatterCache
+        if let cache = tag.context.userInfo[DateFormatterCache.userInfoKey] as? DateFormatterCache {
+            dateFormatterCache = cache
+        } else {
+            dateFormatterCache = DateFormatterCache()
+            tag.context.userInfo[DateFormatterCache.userInfoKey] = dateFormatterCache
+        }
+
+        let dateFormat: String
         /// Set format as the second param or default to ISO-8601 format.
         if tag.parameters.count == 2, let param = tag.parameters[1].string {
-            formatter.dateFormat = param
+            dateFormat = param
         } else {
-            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            dateFormat = "yyyy-MM-dd HH:mm:ss"
+        }
+
+        let dateFormatter: DateFormatter
+        if let formatter = dateFormatterCache.dateFormatters[dateFormat] {
+            dateFormatter = formatter
+        } else {
+            dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = dateFormat
+            dateFormatterCache.dateFormatters[dateFormat] = dateFormatter
         }
 
         /// Return formatted date
-        return Future.map(on: tag) { .string(formatter.string(from: date)) }
+        return Future.map(on: tag) { .string(dateFormatter.string(from: date)) }
     }
+}
+
+private class DateFormatterCache {
+    static let userInfoKey = "TemplateKit.DateFormatterCache"
+
+    var dateFormatters: [String: DateFormatter] = [:]
 }
