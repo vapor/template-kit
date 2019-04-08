@@ -209,7 +209,7 @@ public final class TemplateSerializer {
                 copy["isLast"] = .bool(index == count - 1)
                 let serializer = TemplateSerializer(
                     renderer: self.renderer,
-                    context: .init(data: .dictionary(copy)),
+                    context: .init(data: .dictionary(copy), userInfo: self.context.userInfo),
                     using: self.container
                 )
                 return serializer.serialize(ast: iterator.body)
