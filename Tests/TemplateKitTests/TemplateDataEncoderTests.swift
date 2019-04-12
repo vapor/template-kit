@@ -137,7 +137,9 @@ class TemplateDataEncoderTests: XCTestCase {
             tail
             """),
         ]
-        let worker = EmbeddedEventLoop()
+        let elg = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+        defer { try! elg.syncShutdownGracefully() }
+        let worker = elg.next()
 
         struct User: Codable {
             var id: Int?
@@ -151,7 +153,7 @@ class TemplateDataEncoderTests: XCTestCase {
         let user = User(id: nil, name: "Vapor")
         let profile = Profile(currentUser: Future.map(on: worker) { user })
 
-        let data = try TemplateDataEncoder().testEncode(profile)
+        let data = try TemplateDataEncoder().testEncode(profile, on: worker)
         print(data)
         let container = BasicContainer(config: .init(), environment: .testing, services: .init(), on: worker)
 
@@ -225,7 +227,7 @@ class TemplateDataEncoderTests: XCTestCase {
 }
 
 extension TemplateDataEncoder {
-    func testEncode<E>(_ encodable: E) throws -> TemplateData where E: Encodable {
-        return try encode(encodable, on: EmbeddedEventLoop()).wait()
+    func testEncode<E>(_ encodable: E, on eventLoop: EventLoop = EmbeddedEventLoop()) throws -> TemplateData where E: Encodable {
+        return try encode(encodable, on: eventLoop).wait()
     }
 }
