@@ -137,7 +137,9 @@ class TemplateDataEncoderTests: XCTestCase {
             tail
             """),
         ]
-        let worker = EmbeddedEventLoop()
+        let elg = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+        defer { try! elg.syncShutdownGracefully() }
+        let worker = elg.next()
 
         struct User: Codable {
             var id: Int?
@@ -151,7 +153,7 @@ class TemplateDataEncoderTests: XCTestCase {
         let user = User(id: nil, name: "Vapor")
         let profile = Profile(currentUser: Future.map(on: worker) { user })
 
-        let data = try TemplateDataEncoder().testEncode(profile)
+        let data = try TemplateDataEncoder().testEncode(profile, on: worker)
         print(data)
         let container = BasicContainer(config: .init(), environment: .testing, services: .init(), on: worker)
 
@@ -200,6 +202,14 @@ class TemplateDataEncoderTests: XCTestCase {
         print(formatter.string(from: date))
         XCTAssertEqual(String(data: view.data, encoding: .utf8), formatter.string(from: date))
     }
+    
+    func testTemplabeByteScannerPeak() {
+        let scanner = TemplateByteScanner(data: Data(), file: "empty")
+        
+        XCTAssertNil(scanner.peek(by: 0))
+        XCTAssertNil(scanner.peek(by: -1))
+        XCTAssertNil(scanner.peek(by: 1))
+    }
 
     static var allTests = [
         ("testString", testString),
@@ -212,11 +222,12 @@ class TemplateDataEncoderTests: XCTestCase {
         ("testNestedEncodable", testNestedEncodable),
         ("testGH10", testGH10),
         ("testGH20", testGH20),
+        ("testTemplabeByteScannerPeak", testTemplabeByteScannerPeak),
     ]
 }
 
 extension TemplateDataEncoder {
-    func testEncode<E>(_ encodable: E) throws -> TemplateData where E: Encodable {
-        return try encode(encodable, on: EmbeddedEventLoop()).wait()
+    func testEncode<E>(_ encodable: E, on eventLoop: EventLoop = EmbeddedEventLoop()) throws -> TemplateData where E: Encodable {
+        return try encode(encodable, on: eventLoop).wait()
     }
 }

@@ -15,8 +15,10 @@ public final class DateFormat: TagRenderer {
         default: throw tag.error(reason: "Invalid parameter count: \(tag.parameters.count). 1 or 2 required.")
         }
 
-        /// Assume the date is a floating point number
-        let date = Date(timeIntervalSince1970: tag.parameters[0].double ?? 0)
+        /// Expect the date to be a floating point number.
+        guard let timestamp = tag.parameters[0].double
+            else { return Future.map(on: tag) { .null } }
+        let date = Date(timeIntervalSince1970: timestamp)
 
         let dateFormatterCache: DateFormatterCache
         if let cache = tag.context.userInfo[DateFormatterCache.userInfoKey] as? DateFormatterCache {
