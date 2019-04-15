@@ -133,7 +133,7 @@ class TemplateDataEncoderTests: XCTestCase {
                 case bar
             }
 
-            override func encode(to encoder: Encoder) throws {
+            func encode(to encoder: Encoder) throws {
                 // Note: `super` will also call `encoder.container(keyedBy:)`; we want to ensure that the data written
                 // by `super` will still be present in the final dictionary.
                 try super.encode(to: encoder)
@@ -159,7 +159,7 @@ class TemplateDataEncoderTests: XCTestCase {
                 case bar
             }
 
-            override func encode(to encoder: Encoder) throws {
+            func encode(to encoder: Encoder) throws {
                 var container = encoder.container(keyedBy: CodingKeys.self)
                 try container.encode(bar, forKey: .bar)
                 try super.encode(to: container.superEncoder())
