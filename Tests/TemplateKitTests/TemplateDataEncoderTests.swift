@@ -125,11 +125,20 @@ class TemplateDataEncoderTests: XCTestCase {
     func testEncodeSuperCustomImplementation() {
         class A: Encodable {
             var foo = "foo"
+
+            enum CodingKeys: String, CodingKey {
+                case foo
+            }
+
+            func encode(to encoder: Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                try container.encode(foo, forKey: .foo)
+            }
         }
         class B: A {
             var bar = "bar"
 
-            enum CodingKeys: String, CodingKey {
+            enum SubclassCodingKeys: String, CodingKey {
                 case bar
             }
 
@@ -137,7 +146,7 @@ class TemplateDataEncoderTests: XCTestCase {
                 // Note: `super` will also call `encoder.container(keyedBy:)`; we want to ensure that the data written
                 // by `super` will still be present in the final dictionary.
                 try super.encode(to: encoder)
-                var container = encoder.container(keyedBy: CodingKeys.self)
+                var container = encoder.container(keyedBy: SubclassCodingKeys.self)
                 try container.encode(bar, forKey: .bar)
             }
         }
@@ -151,16 +160,25 @@ class TemplateDataEncoderTests: XCTestCase {
     func testEncodeSuperCustomImplementationWithSuperEncoder1() {
         class A: Encodable {
             var foo = "foo"
+
+            enum CodingKeys: String, CodingKey {
+                case foo
+            }
+
+            func encode(to encoder: Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                try container.encode(foo, forKey: .foo)
+            }
         }
         class B: A {
             var bar = "bar"
 
-            enum CodingKeys: String, CodingKey {
+            enum SubclassCodingKeys: String, CodingKey {
                 case bar
             }
 
             override func encode(to encoder: Encoder) throws {
-                var container = encoder.container(keyedBy: CodingKeys.self)
+                var container = encoder.container(keyedBy: SubclassCodingKeys.self)
                 try container.encode(bar, forKey: .bar)
                 try super.encode(to: container.superEncoder())
             }
