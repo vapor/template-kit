@@ -14,6 +14,13 @@ extension String: TemplateDataRepresentable {
     }
 }
 
+extension Data: TemplateDataRepresentable {
+    /// See `TemplateDataRepresentable`
+    public func convertToTemplateData() throws -> TemplateData {
+        return .data(self)
+    }
+}
+
 extension FixedWidthInteger {
     /// See `TemplateDataRepresentable`
     public func convertToTemplateData() throws -> TemplateData {
@@ -54,6 +61,20 @@ extension OptionalType {
 }
 
 extension Optional: TemplateDataRepresentable { }
+
+extension Array: TemplateDataRepresentable where Element: TemplateDataRepresentable {
+    /// See `TemplateDataRepresentable`
+    public func convertToTemplateData() throws -> TemplateData {
+        return try .array(self.map { try $0.convertToTemplateData() })
+    }
+}
+
+extension Dictionary: TemplateDataRepresentable where Key == String, Value: TemplateDataRepresentable {
+    /// See `TemplateDataRepresentable`
+    public func convertToTemplateData() throws -> TemplateData {
+        return try .dictionary(self.mapValues { try $0.convertToTemplateData() })
+    }
+}
 
 extension Bool: TemplateDataRepresentable {
     /// See `TemplateDataRepresentable`
