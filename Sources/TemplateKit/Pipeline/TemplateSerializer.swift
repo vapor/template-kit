@@ -224,6 +224,10 @@ public final class TemplateSerializer {
                     return .data(data)
                 }
             }
+            
+            guard !data.isNull else {
+                return Future.map(on: self.container) { .null }
+            }
 
             guard let data = data.array else {
                 throw TemplateKitError(
