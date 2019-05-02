@@ -63,7 +63,7 @@ extension String {
             let end = raw + expectedLength
             for character in self.utf8 {
                 var escaped = String.htmlEscapeMapASCIIByteArray[Int(character)]
-                assert(raw + escaped.count < end)
+                assert(raw + escaped.count <= end)
                 raw.copyMemory(from: &escaped, byteCount: escaped.count)
                 raw += escaped.count
             }
@@ -81,7 +81,7 @@ extension String {
             writeEscapedString(resultBytes)
             
             // Note: Byte 16 should always be zero to make sure the string is null-terminated.
-            // This is ensured by `raw + escaped.count < end = expectedLength <= 15` above.
+            // This is ensured by `raw + escaped.count <= end = expectedLength <= 15` above.
             return String(cString: resultBytes.assumingMemoryBound(to: UInt8.self))
         } else {
             var resultData = Array<UInt8>(repeating: 0, count: expectedLength)
