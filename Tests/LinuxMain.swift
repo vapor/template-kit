@@ -1,6 +1,8 @@
 import XCTest
-@testable import TemplateKitTests
 
-XCTMain([
-    testCase(TemplateDataEncoderTests.allTests),
-])
+import TemplateKitTests
+
+var tests = [XCTestCaseEntry]()
+tests += TemplateKitTests.__allTests()
+
+XCTMain(tests)
