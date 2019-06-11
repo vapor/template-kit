@@ -261,8 +261,7 @@ class TemplateDataEncoderTests: XCTestCase {
         let user = User(id: nil, name: "Vapor")
         let profile = Profile(currentUser: Future.map(on: worker) { user })
 
-        let data = try TemplateDataEncoder().testEncode(profile, on: worker)
-        print(data)
+        let data = try TemplateDataEncoder().testEncode(profile)
         let container = BasicContainer(config: .init(), environment: .testing, services: .init(), on: worker)
 
         let renderer = PlaintextRenderer(viewsDir: "/", on: container)
@@ -276,12 +275,12 @@ class TemplateDataEncoderTests: XCTestCase {
         XCTAssertEqual(String(data: view.data, encoding: .utf8), "headVaportail")
     }
     
-    // https://github.com/vapor/template-kit/issues/20
-    func testGH20() throws {
+    private func checkDateFormatting(
+        dateFormat: DateFormat, dateFormatter: DateFormatter, file: StaticString = #file, line: UInt = #line) throws {
         func wrap(_ syntax: TemplateSyntaxType) -> TemplateSyntax {
             return TemplateSyntax(type: syntax, source: TemplateSource(file: "test", line: 0, column: 0, range: 0..<1))
         }
-        
+
         let path: [CodingKey] = [
             BasicKey.init("date"),
         ]
@@ -289,7 +288,7 @@ class TemplateDataEncoderTests: XCTestCase {
         let worker = EmbeddedEventLoop()
         let container = BasicContainer(config: .init(), environment: .testing, services: .init(), on: worker)
         let renderer = PlaintextRenderer(viewsDir: "/", on: container)
-        renderer.tags["date"] = DateFormat()
+        renderer.tags["date"] = dateFormat
         let ast: [TemplateSyntax] = [
             wrap(.tag(TemplateTag(
                 name: "date",
@@ -299,16 +298,51 @@ class TemplateDataEncoderTests: XCTestCase {
         ]
         let date = Date()
         let data = try TemplateDataEncoder().testEncode(["date": date])
-        print(data)
         let view = try TemplateSerializer(
             renderer: renderer,
             context: TemplateDataContext(data: data),
             using: container
         ).serialize(ast: ast).wait()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        print(formatter.string(from: date))
-        XCTAssertEqual(String(data: view.data, encoding: .utf8), formatter.string(from: date))
+        XCTAssertEqual(String(data: view.data, encoding: .utf8), dateFormatter.string(from: date), file: file, line: line)
+    }
+    
+    // https://github.com/vapor/template-kit/issues/20
+    func testGH20() throws {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        try checkDateFormatting(dateFormat: DateFormat(), dateFormatter: dateFormatter)
+    }
+
+    func testISO8601DateFormat() throws {
+        let dateFormatter = DateFormatter()
+        dateFormatter.calendar = Calendar(identifier: .iso8601)
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSXXXXX"
+        try checkDateFormatting(dateFormat: .iso8601, dateFormatter: dateFormatter)
+    }
+
+    func testDateFormatterThreadSafety() throws {
+        let dateFormatter = DateFormatter()
+        dateFormatter.calendar = Calendar(identifier: .iso8601)
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSXXXXX"
+
+        let date = Date()
+        let expectedString = dateFormatter.string(from: date)
+        let queue = OperationQueue()
+        queue.maxConcurrentOperationCount = 8
+        queue.isSuspended = true
+
+        for _ in 0..<50_000 {
+            queue.addOperation {
+                XCTAssertEqual(dateFormatter.string(from: date), expectedString)
+            }
+        }
+
+        queue.isSuspended = false
+        queue.waitUntilAllOperationsAreFinished()
     }
     
     func testTemplabeByteScannerPeak() {

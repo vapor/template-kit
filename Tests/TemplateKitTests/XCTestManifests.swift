@@ -24,6 +24,7 @@ extension TemplateDataEncoderTests {
     static let __allTests__TemplateDataEncoderTests = [
         ("testArray", testArray),
         ("testComplexEncodable", testComplexEncodable),
+        ("testDateFormatterThreadSafety", testDateFormatterThreadSafety),
         ("testDictionary", testDictionary),
         ("testDouble", testDouble),
         ("testEncodable", testEncodable),
@@ -35,6 +36,7 @@ extension TemplateDataEncoderTests {
         ("testEncodingPerformanceExampleModelJSONBaseline", testEncodingPerformanceExampleModelJSONBaseline),
         ("testGH10", testGH10),
         ("testGH20", testGH20),
+        ("testISO8601DateFormat", testISO8601DateFormat),
         ("testNestedArray", testNestedArray),
         ("testNestedDictionary", testNestedDictionary),
         ("testNestedEncodable", testNestedEncodable),
