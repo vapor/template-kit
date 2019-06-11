@@ -321,6 +321,29 @@ class TemplateDataEncoderTests: XCTestCase {
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSXXXXX"
         try checkDateFormatting(dateFormat: .iso8601, dateFormatter: dateFormatter)
     }
+
+    func testDateFormatterThreadSafety() throws {
+        let dateFormatter = DateFormatter()
+        dateFormatter.calendar = Calendar(identifier: .iso8601)
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSXXXXX"
+
+        let date = Date()
+        let expectedString = dateFormatter.string(from: date)
+        let queue = OperationQueue()
+        queue.maxConcurrentOperationCount = 8
+        queue.isSuspended = true
+
+        for _ in 0..<50_000 {
+            queue.addOperation {
+                XCTAssertEqual(dateFormatter.string(from: date), expectedString)
+            }
+        }
+
+        queue.isSuspended = false
+        queue.waitUntilAllOperationsAreFinished()
+    }
     
     func testTemplabeByteScannerPeak() {
         let scanner = TemplateByteScanner(data: Data(), file: "empty")
