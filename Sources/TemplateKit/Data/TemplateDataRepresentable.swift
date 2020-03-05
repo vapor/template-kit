@@ -110,3 +110,9 @@ extension Date: TemplateDataRepresentable {
         return .double(timeIntervalSince1970)
     }
 }
+
+extension URL: TemplateDataRepresentable {
+    public func convertToTemplateData() throws -> TemplateData {
+        return .string(absoluteString)
+    }
+}
