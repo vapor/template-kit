@@ -59,6 +59,14 @@ class TemplateDataEncoderTests: XCTestCase {
             "hello": .string("hello"),
         ]))
     }
+    
+    func testEncodableWithURL() {
+        struct Hello: Encodable { var url = URL(string: "https://vapor.codes")!}
+        
+        try XCTAssertEqual(TemplateDataEncoder().testEncode(Hello()), .dictionary([
+            "url": .string("https://vapor.codes"),
+        ]))
+    }
 
     func testComplexEncodable() {
         struct Test: Encodable {
